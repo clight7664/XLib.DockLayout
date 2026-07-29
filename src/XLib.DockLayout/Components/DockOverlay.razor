@@ -1,0 +1,18 @@
+@if (Visible)
+{
+    <div class="xdl-overlay" aria-live="polite" aria-label="Dock target overlay">
+        <div class="xdl-drop-zone xdl-drop-zone-top">Top</div>
+        <div class="xdl-drop-zone xdl-drop-zone-right">Right</div>
+        <div class="xdl-drop-zone xdl-drop-zone-bottom">Bottom</div>
+        <div class="xdl-drop-zone xdl-drop-zone-left">Left</div>
+        <div class="xdl-drop-zone xdl-drop-zone-center">Center</div>
+        <span class="xdl-visually-hidden">@Message</span>
+    </div>
+}
+
+@code {
+    /// <summary>Gets or sets overlay visibility.</summary>
+    [Parameter] public bool Visible { get; set; }
+    /// <summary>Gets or sets live-region text.</summary>
+    [Parameter] public string Message { get; set; } = string.Empty;
+}

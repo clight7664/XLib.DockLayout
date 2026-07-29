@@ -1,0 +1,81 @@
+<div class="demo-tree-node"
+     role="treeitem"
+     aria-level="@Level"
+     aria-expanded="@ExpandedValue"
+     aria-selected="@IsSelected">
+    <div class="demo-tree-row" style="--demo-tree-depth:@Level">
+        @if (HasChildren)
+        {
+            <button type="button"
+                    class="demo-tree-toggle"
+                    aria-label="@ToggleAriaLabel"
+                    @onclick="ToggleExpanded">
+                @(_expanded ? "▾" : "▸")
+            </button>
+        }
+        else
+        {
+            <span class="demo-tree-toggle-spacer" aria-hidden="true"></span>
+        }
+
+        <button type="button"
+                class="@(IsSelected ? "demo-tree-label demo-selected" : "demo-tree-label")"
+                title="@NodeTitle"
+                data-demo-tree-item="@Item.Id"
+                @onclick="SelectAsync"
+                @ondblclick="ActivateAsync">
+            <span class="demo-tree-icon" aria-hidden="true">@(Item.Icon ?? "•")</span>
+            <span>@Item.Label</span>
+        </button>
+    </div>
+
+    @if (_expanded && HasChildren)
+    {
+        <div class="demo-tree-children" role="group">
+            @foreach (var child in Item.Children)
+            {
+                <TreeViewNode Item="child"
+                              Level="@(Level + 1)"
+                              SelectedItemId="@SelectedItemId"
+                              OnSelected="OnSelected"
+                              OnActivated="OnActivated" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool _expanded;
+    private string? _initializedItemId;
+
+    /// <summary>Gets or sets the current item.</summary>
+    [Parameter, EditorRequired] public TreeViewItem Item { get; set; } = default!;
+    /// <summary>Gets or sets the one-based tree depth.</summary>
+    [Parameter] public int Level { get; set; } = 1;
+    /// <summary>Gets or sets the selected item identifier.</summary>
+    [Parameter] public string? SelectedItemId { get; set; }
+    /// <summary>Gets or sets the selection callback.</summary>
+    [Parameter] public EventCallback<TreeViewItem> OnSelected { get; set; }
+    /// <summary>Gets or sets the double-click activation callback.</summary>
+    [Parameter] public EventCallback<TreeViewItem> OnActivated { get; set; }
+
+    private bool HasChildren => Item.Children.Count > 0;
+    private bool CanOpen => !string.IsNullOrWhiteSpace(Item.OpenPath) && !string.IsNullOrWhiteSpace(Item.ContentId);
+    private bool IsSelected => string.Equals(Item.Id, SelectedItemId, StringComparison.Ordinal);
+    private string? ExpandedValue => HasChildren ? _expanded.ToString().ToLowerInvariant() : null;
+    private string ToggleAriaLabel => $"{(_expanded ? "Collapse" : "Expand")} {Item.Label}";
+    private string NodeTitle => CanOpen ? $"Double-click to open {Item.OpenPath}" : Item.Label;
+
+    protected override void OnParametersSet()
+    {
+        if (!string.Equals(_initializedItemId, Item.Id, StringComparison.Ordinal))
+        {
+            _initializedItemId = Item.Id;
+            _expanded = Item.Expanded;
+        }
+    }
+
+    private void ToggleExpanded() => _expanded = !_expanded;
+    private Task SelectAsync() => OnSelected.InvokeAsync(Item);
+    private Task ActivateAsync() => CanOpen ? OnActivated.InvokeAsync(Item) : Task.CompletedTask;
+}

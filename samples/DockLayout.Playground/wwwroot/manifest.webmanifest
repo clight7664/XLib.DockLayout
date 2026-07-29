@@ -1,0 +1,26 @@
+{
+  "name": "XLib.DockLayout Playground",
+  "short_name": "XLib.DockLayout",
+  "description": "IDE-style DockLayout Razor component playground.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "icons/docklayout-icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/docklayout-icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/docklayout-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

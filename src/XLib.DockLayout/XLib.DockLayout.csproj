@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <AssemblyName>XLib.DockLayout</AssemblyName>
+    <RootNamespace>XLib.DockLayout</RootNamespace>
+    <PackageId>XLib.DockLayout</PackageId>
+    <Version>0.1.0</Version>
+    <Title>DockLayout for Blazor</Title>
+    <Description>Self-developed IDE-style docking layout Razor Class Library for Blazor WebAssembly.</Description>
+    <Authors>clight7664</Authors>
+    <Company>DockLayout Contributors</Company>
+    <Copyright>Copyright © 2026 DockLayout Contributors</Copyright>
+    <PackageTags>blazor;webassembly;razor-components;docklayout;docking;splitter;tabs;ide</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/clight7664/XLib.DockLayout</RepositoryUrl>
+    <PackageProjectUrl>https://clight7664.github.io/XLib.DockLayout/</PackageProjectUrl>
+    <PackageReadmeFile>README.NuGet.md</PackageReadmeFile>
+    <PackageIcon>docklayout-icon.png</PackageIcon>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes>Initial controlled DockLayout package with panels, tabs, splitters, XML persistence, dark/light themes and Blazor WebAssembly Playground.</PackageReleaseNotes>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <StaticWebAssetBasePath>_content/XLib.DockLayout</StaticWebAssetBasePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.NuGet.md" Pack="true" PackagePath="" Link="README.NuGet.md" />
+    <None Include="../../LICENSE.txt" Pack="true" PackagePath="" Link="LICENSE.txt" />
+    <None Include="../../assets/branding/docklayout-icon-128.png" Pack="true" PackagePath="" Link="docklayout-icon.png" />
+    <Content Include="Serialization/layout-v1.xsd" Pack="true" PackagePath="contentFiles/any/any/Serialization" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,94 @@
+<div class="xdl-toolbar-entry-host">
+    <button type="button"
+            class="@CssClass"
+            data-xdl-toolbar-entry="@Panel.Id"
+            aria-label="Toggle @Panel.Title"
+            aria-controls="xdl-panel-@Panel.Id"
+            aria-expanded="@(Panel.Active && Panel.Visible && !Panel.Collapsed)"
+            aria-haspopup="menu"
+            title="@Panel.Title"
+            @onmouseenter="() => OnHover.InvokeAsync(Panel.Id)"
+            @onmouseleave="() => OnLeave.InvokeAsync(Panel.Id)"
+            @oncontextmenu="OpenContextMenu"
+            @oncontextmenu:preventDefault="true"
+            @onkeydown="HandleKeyDownAsync"
+            @onclick="ToggleAsync">
+        <span class="xdl-icon" aria-hidden="true">@(Panel.Icon ?? "□")</span>
+        <span class="xdl-toolbar-entry-title">@Panel.Title</span>
+    </button>
+
+    @if (_contextMenuOpen)
+    {
+        <div class="@ContextMenuCssClass" role="menu" aria-label="@Panel.Title toolbar actions">
+            <button type="button" role="menuitem" @onclick="HideAsync">Hide from toolbar</button>
+        </div>
+    }
+</div>
+
+@code {
+    private bool _contextMenuOpen;
+
+    /// <summary>Gets or sets the represented panel.</summary>
+    [Parameter, EditorRequired]
+    public DockPanelInfo Panel { get; set; } = default!;
+
+    /// <summary>Gets or sets the toolbar side.</summary>
+    [Parameter, EditorRequired]
+    public string Side { get; set; } = "left";
+
+    /// <summary>Gets or sets the toggle callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnToggle { get; set; }
+
+    /// <summary>Gets or sets the hide-from-toolbar callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnHide { get; set; }
+
+    /// <summary>Gets or sets the auto-hide hover callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnHover { get; set; }
+
+    /// <summary>Gets or sets the auto-hide leave callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnLeave { get; set; }
+
+    private string CssClass => Panel.Active && Panel.Visible && !Panel.Collapsed
+        ? "xdl-toolbar-entry xdl-active"
+        : "xdl-toolbar-entry";
+
+    private string ContextMenuCssClass => Side.Equals("right", StringComparison.OrdinalIgnoreCase)
+        ? "xdl-toolbar-context-menu xdl-toolbar-context-menu-right"
+        : "xdl-toolbar-context-menu xdl-toolbar-context-menu-left";
+
+    private void OpenContextMenu(MouseEventArgs args)
+    {
+        _ = args;
+        _contextMenuOpen = true;
+    }
+
+    private async Task ToggleAsync()
+    {
+        _contextMenuOpen = false;
+        await OnToggle.InvokeAsync(Panel.Id);
+    }
+
+    private async Task HideAsync()
+    {
+        _contextMenuOpen = false;
+        await OnHide.InvokeAsync(Panel.Id);
+    }
+
+    private Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if ((args.ShiftKey && args.Key == "F10") || args.Key == "ContextMenu")
+        {
+            _contextMenuOpen = true;
+        }
+        else if (args.Key == "Escape")
+        {
+            _contextMenuOpen = false;
+        }
+
+        return Task.CompletedTask;
+    }
+}

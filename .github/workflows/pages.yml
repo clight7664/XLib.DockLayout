@@ -1,0 +1,82 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.302
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Restore
+        run: dotnet restore XLib.DockLayout.sln
+
+      - name: Publish Blazor WebAssembly Playground
+        run: >-
+          dotnet publish samples/DockLayout.Playground/DockLayout.Playground.csproj
+          -c Release --no-restore
+          -o artifacts/pages
+
+      - name: Configure project-page base path and SPA fallback
+        env:
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/pages/wwwroot")
+          index = root / "index.html"
+          text = index.read_text(encoding="utf-8")
+          base_path = f"/{os.environ['REPOSITORY_NAME']}/"
+          expected = '<base href="/" />'
+          if expected not in text:
+              raise SystemExit("Expected root base href was not found in published index.html")
+          text = text.replace(expected, f'<base href="{base_path}" />', 1)
+          index.write_text(text, encoding="utf-8")
+          (root / "404.html").write_text(text, encoding="utf-8")
+          (root / ".nojekyll").write_text("", encoding="utf-8")
+          print(f"Configured GitHub Pages base href: {base_path}")
+          PY
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifacts/pages/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,141 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B38AA6C1-C0C5-4D19-9E91-74A973A6E501}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{DB6849E6-97E2-4E3C-B826-B11EE5146CB0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{44A5C7B0-BC87-4ED4-86A2-E4803DD3D890}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3DA21E0D-8E29-4634-B253-DFE084791176}"
+	ProjectSection(SolutionItems) = preProject
+		docs\00-document-index.md = docs\00-document-index.md
+		docs\01-srs.md = docs\01-srs.md
+		docs\02-architecture.md = docs\02-architecture.md
+		docs\03-detailed-design.md = docs\03-detailed-design.md
+		docs\04-public-api.md = docs\04-public-api.md
+		docs\05-xml-layout-format.md = docs\05-xml-layout-format.md
+		docs\06-build-and-run.md = docs\06-build-and-run.md
+		docs\07-test-plan.md = docs\07-test-plan.md
+		docs\08-requirements-traceability.md = docs\08-requirements-traceability.md
+		docs\09-autonomous-control.md = docs\09-autonomous-control.md
+		docs\10-third-party-dependencies.md = docs\10-third-party-dependencies.md
+		docs\11-security-analysis.md = docs\11-security-analysis.md
+		docs\12-performance-report.md = docs\12-performance-report.md
+		docs\13-release-and-delivery.md = docs\13-release-and-delivery.md
+		docs\14-risk-register.md = docs\14-risk-register.md
+		docs\15-verification-record.md = docs\15-verification-record.md
+		docs\16-known-issues-and-limitations.md = docs\16-known-issues-and-limitations.md
+		docs\17-ai-reproduction-guide.md = docs\17-ai-reproduction-guide.md
+		docs\18-github-repository-and-pages.md = docs\18-github-repository-and-pages.md
+		docs\19-nuget-publishing.md = docs\19-nuget-publishing.md
+		docs\20-conversation-implementation-record.md = docs\20-conversation-implementation-record.md
+		docs\21-release-checklist.md = docs\21-release-checklist.md
+		docs\baseline\XLib.DockLayout_00_统一模型输入文档.md = docs\baseline\XLib.DockLayout_00_统一模型输入文档.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{F1EAEEAD-9FD1-432D-A1A4-640B8D97BF88}"
+	ProjectSection(SolutionItems) = preProject
+		assets\README.md = assets\README.md
+		assets\branding\README.md = assets\branding\README.md
+		assets\branding\docklayout-icon-128.png = assets\branding\docklayout-icon-128.png
+		assets\branding\docklayout-icon-256.png = assets\branding\docklayout-icon-256.png
+		assets\branding\docklayout-icon-32.png = assets\branding\docklayout-icon-32.png
+		assets\branding\docklayout-icon-512.png = assets\branding\docklayout-icon-512.png
+		assets\branding\docklayout-icon-64.png = assets\branding\docklayout-icon-64.png
+		assets\branding\docklayout-icon-inverse.svg = assets\branding\docklayout-icon-inverse.svg
+		assets\branding\docklayout-icon-transparent.svg = assets\branding\docklayout-icon-transparent.svg
+		assets\branding\docklayout-icon.svg = assets\branding\docklayout-icon.svg
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{C5631A4A-6E31-4C3A-AE9A-23F86E2D1401}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\README.md = scripts\README.md
+		scripts\install-playwright.ps1 = scripts\install-playwright.ps1
+		scripts\install-playwright.sh = scripts\install-playwright.sh
+		scripts\publish-nuget.ps1 = scripts\publish-nuget.ps1
+		scripts\publish-nuget.sh = scripts\publish-nuget.sh
+		scripts\static-verify.py = scripts\static-verify.py
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "eng", "eng", "{970B0128-1FD8-49B0-A6CA-6CFD31022542}"
+	ProjectSection(SolutionItems) = preProject
+		eng\pack.ps1 = eng\pack.ps1
+		eng\pack.sh = eng\pack.sh
+		eng\verify.ps1 = eng\verify.ps1
+		eng\verify.sh = eng\verify.sh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{A39AAE37-E2A0-47C6-989F-10A9285A0EE2}"
+	ProjectSection(SolutionItems) = preProject
+		.github\ISSUE_TEMPLATE\bug_report.yml = .github\ISSUE_TEMPLATE\bug_report.yml
+		.github\dependabot.yml = .github\dependabot.yml
+		.github\workflows\ci.yml = .github\workflows\ci.yml
+		.github\workflows\pages.yml = .github\workflows\pages.yml
+		.github\workflows\release.yml = .github\workflows\release.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F66D13A4-7984-4F01-A38A-E4CC67B678DD}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		AGENTS.md = AGENTS.md
+		CHANGELOG.md = CHANGELOG.md
+		CONTRIBUTING.md = CONTRIBUTING.md
+		DELIVERY_INDEX.md = DELIVERY_INDEX.md
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		Directory.Packages.props = Directory.Packages.props
+		global.json = global.json
+		LICENSE.txt = LICENSE.txt
+		NuGet.Config = NuGet.Config
+		README.md = README.md
+		README.en.md = README.en.md
+		README.NuGet.md = README.NuGet.md
+		SBOM.spdx.json = SBOM.spdx.json
+		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XLib.DockLayout", "src\XLib.DockLayout\XLib.DockLayout.csproj", "{24A63636-E144-5D0B-9D50-F359BFD73B62}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DockLayout.Playground", "samples\DockLayout.Playground\DockLayout.Playground.csproj", "{7484C582-5E68-5478-98BA-A80D0A72ADCB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XLib.DockLayout.Tests", "tests\XLib.DockLayout.Tests\XLib.DockLayout.Tests.csproj", "{5EC9E8DD-EAF2-5BD4-BCF8-4304F1A0CA3E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DockLayout.Playground.E2E", "tests\DockLayout.Playground.E2E\DockLayout.Playground.E2E.csproj", "{BCC9F7AA-5774-58A4-97BB-D86B7AF7E774}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{24A63636-E144-5D0B-9D50-F359BFD73B62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24A63636-E144-5D0B-9D50-F359BFD73B62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24A63636-E144-5D0B-9D50-F359BFD73B62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24A63636-E144-5D0B-9D50-F359BFD73B62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7484C582-5E68-5478-98BA-A80D0A72ADCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7484C582-5E68-5478-98BA-A80D0A72ADCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7484C582-5E68-5478-98BA-A80D0A72ADCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7484C582-5E68-5478-98BA-A80D0A72ADCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EC9E8DD-EAF2-5BD4-BCF8-4304F1A0CA3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EC9E8DD-EAF2-5BD4-BCF8-4304F1A0CA3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EC9E8DD-EAF2-5BD4-BCF8-4304F1A0CA3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EC9E8DD-EAF2-5BD4-BCF8-4304F1A0CA3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCC9F7AA-5774-58A4-97BB-D86B7AF7E774}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCC9F7AA-5774-58A4-97BB-D86B7AF7E774}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCC9F7AA-5774-58A4-97BB-D86B7AF7E774}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCC9F7AA-5774-58A4-97BB-D86B7AF7E774}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{24A63636-E144-5D0B-9D50-F359BFD73B62} = {B38AA6C1-C0C5-4D19-9E91-74A973A6E501}
+		{7484C582-5E68-5478-98BA-A80D0A72ADCB} = {DB6849E6-97E2-4E3C-B826-B11EE5146CB0}
+		{5EC9E8DD-EAF2-5BD4-BCF8-4304F1A0CA3E} = {44A5C7B0-BC87-4ED4-86A2-E4803DD3D890}
+		{BCC9F7AA-5774-58A4-97BB-D86B7AF7E774} = {44A5C7B0-BC87-4ED4-86A2-E4803DD3D890}
+	EndGlobalSection
+EndGlobal

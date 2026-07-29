@@ -1,0 +1,16 @@
+<ErrorBoundary @ref="_boundary">
+    <ChildContent>@ChildContent</ChildContent>
+    <ErrorContent Context="exception">
+        <div class="xdl-content-error" role="alert">
+            Content rendering failed: @exception.GetType().Name
+            <button type="button" @onclick="Recover">Retry</button>
+        </div>
+    </ErrorContent>
+</ErrorBoundary>
+
+@code {
+    private ErrorBoundary? _boundary;
+    /// <summary>Gets or sets isolated child content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private void Recover() => _boundary?.Recover();
+}

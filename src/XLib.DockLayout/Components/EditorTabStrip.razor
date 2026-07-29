@@ -1,0 +1,60 @@
+@{
+    var orderedTabs = View.Tabs.OrderBy(item => item.Order).ToArray();
+    var contentPanelId = $"xdl-tabpanel-{SanitizeId(View.Id)}";
+}
+<div class="@CssClass" role="tablist" aria-label="Editor tabs for @View.Id">
+    @for (var index = 0; index < orderedTabs.Length; index++)
+    {
+        var tab = orderedTabs[index];
+        var previous = orderedTabs.Length > 1 ? orderedTabs[(index - 1 + orderedTabs.Length) % orderedTabs.Length].Id : tab.Id;
+        var next = orderedTabs.Length > 1 ? orderedTabs[(index + 1) % orderedTabs.Length].Id : tab.Id;
+        var first = orderedTabs[0].Id;
+        var last = orderedTabs[^1].Id;
+        <EditorTabHeader @key="tab.Id"
+                         Tab="@tab"
+                         ContentPanelId="@contentPanelId"
+                         PreviousTabId="@previous"
+                         NextTabId="@next"
+                         FirstTabId="@first"
+                         LastTabId="@last"
+                         OnActivate="OnActivate"
+                         OnClose="OnClose"
+                         OnPin="OnPin"
+                         OnContextAction="OnContextAction" />
+    }
+    @if (OverflowMode == TabOverflowMode.Menu && orderedTabs.Length > 0)
+    {
+        <details class="xdl-tab-overflow-menu">
+            <summary aria-label="Open tab overflow menu">⋯</summary>
+            <div class="xdl-tab-overflow-items">
+                @foreach (var tab in orderedTabs)
+                {
+                    <button type="button"
+                            class="@(tab.Active ? "xdl-active" : string.Empty)"
+                            aria-current="@(tab.Active ? "page" : null)"
+                            @onclick="() => OnActivate.InvokeAsync(tab.Id)">@tab.Title</button>
+                }
+            </div>
+        </details>
+    }
+</div>
+
+@code {
+    /// <summary>Gets or sets the EditorView.</summary>
+    [Parameter, EditorRequired] public EditorViewInfo View { get; set; } = default!;
+    /// <summary>Gets or sets the overflow mode.</summary>
+    [Parameter] public TabOverflowMode OverflowMode { get; set; }
+    /// <summary>Gets or sets the activation callback.</summary>
+    [Parameter] public EventCallback<string> OnActivate { get; set; }
+    /// <summary>Gets or sets the close callback.</summary>
+    [Parameter] public EventCallback<string> OnClose { get; set; }
+    /// <summary>Gets or sets the pin callback.</summary>
+    [Parameter] public EventCallback<string> OnPin { get; set; }
+    /// <summary>Gets or sets the tab context-menu callback.</summary>
+    [Parameter] public EventCallback<EditorTabContextActionRequest> OnContextAction { get; set; }
+
+    private string CssClass => $"xdl-tab-strip xdl-tab-overflow-{OverflowMode.ToString().ToLowerInvariant()}";
+
+    private static string SanitizeId(string value) => string.Concat(value.Select(character =>
+        char.IsLetterOrDigit(character) || character is '-' or '_' ? character : '-'));
+}

@@ -1,0 +1,106 @@
+<div class="demo-relation-table-host">
+    <table class="demo-relation-table" role="grid" aria-label="@AriaLabel">
+        @if (!string.IsNullOrWhiteSpace(Caption))
+        {
+            <caption>@Caption</caption>
+        }
+        <colgroup>
+            @foreach (var column in Columns)
+            {
+                <col style="@ColumnStyle(column)" />
+            }
+        </colgroup>
+        <thead>
+            <tr role="row">
+                @foreach (var column in Columns)
+                {
+                    <th scope="col" role="columnheader" aria-sort="@AriaSort(column.Key)">
+                        <button type="button" class="demo-relation-sort" @onclick="() => SortBy(column.Key)">
+                            <span>@column.Title</span>
+                            @if (string.Equals(_sortKey, column.Key, StringComparison.Ordinal))
+                            {
+                                <span aria-hidden="true">@(_sortDescending ? "▼" : "▲")</span>
+                            }
+                        </button>
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in SortedRows)
+            {
+                <tr role="row"
+                    class="@(row.Id == _selectedRowId ? "demo-selected" : string.Empty)"
+                    aria-selected="@(row.Id == _selectedRowId)"
+                    @onclick="() => SelectRow(row.Id)">
+                    @foreach (var column in Columns)
+                    {
+                        <td role="gridcell">@CellText(row, column.Key)</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private string? _sortKey;
+    private bool _sortDescending;
+    private string? _selectedRowId;
+
+    /// <summary>Gets or sets table columns.</summary>
+    [Parameter]
+    public IReadOnlyList<RelationTableColumn> Columns { get; set; } = Array.Empty<RelationTableColumn>();
+
+    /// <summary>Gets or sets relationship rows.</summary>
+    [Parameter]
+    public IReadOnlyList<RelationTableRow> Rows { get; set; } = Array.Empty<RelationTableRow>();
+
+    /// <summary>Gets or sets the optional table caption.</summary>
+    [Parameter]
+    public string? Caption { get; set; }
+
+    /// <summary>Gets or sets the accessible table label.</summary>
+    [Parameter]
+    public string AriaLabel { get; set; } = "Relationship table";
+
+    private IEnumerable<RelationTableRow> SortedRows
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_sortKey))
+            {
+                return Rows;
+            }
+
+            return _sortDescending
+                ? Rows.OrderByDescending(row => CellText(row, _sortKey), StringComparer.OrdinalIgnoreCase)
+                : Rows.OrderBy(row => CellText(row, _sortKey), StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    private void SortBy(string key)
+    {
+        if (string.Equals(_sortKey, key, StringComparison.Ordinal))
+        {
+            _sortDescending = !_sortDescending;
+        }
+        else
+        {
+            _sortKey = key;
+            _sortDescending = false;
+        }
+    }
+
+    private void SelectRow(string rowId) => _selectedRowId = rowId;
+
+    private string AriaSort(string key) => !string.Equals(_sortKey, key, StringComparison.Ordinal)
+        ? "none"
+        : _sortDescending ? "descending" : "ascending";
+
+    private static string ColumnStyle(RelationTableColumn column) =>
+        string.IsNullOrWhiteSpace(column.Width) ? string.Empty : $"width:{column.Width}";
+
+    private static string CellText(RelationTableRow row, string key) =>
+        row.Values.TryGetValue(key, out var value) ? Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty : string.Empty;
+}

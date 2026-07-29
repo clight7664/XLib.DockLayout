@@ -1,0 +1,741 @@
+@implements IAsyncDisposable
+@inject IDockContentRegistry ContentRegistry
+@inject IDockLayoutSerializer Serializer
+@inject IDockLayoutPersistence Persistence
+@inject IJSRuntime JsRuntime
+
+<div @ref="_rootElement"
+     class="@RootCssClass"
+     style="@RootStyle"
+     data-xdl-instance="@_instanceId"
+     @onkeydown="HandleRootKeyDown">
+    <CascadingValue Value="Handle" Name="XLibDockLayoutHandle" IsFixed="false">
+    @if (TopToolbarTemplate is not null)
+    {
+        <header class="xdl-top-toolbar" aria-label="Top toolbar">
+            @TopToolbarTemplate
+        </header>
+    }
+
+    <div class="xdl-work-area">
+        <DockToolBar Side="left"
+                     Panels="LeftToolPanels"
+                     OnToggle="TogglePanelAsync"
+                     OnHide="HideToolPanelAsync"
+                     OnShow="ShowToolPanelAsync"
+                     OnHover="ShowAutoHidePanelAsync"
+                     OnLeave="ScheduleAutoHideCloseAsync" />
+
+        <main class="xdl-work-body">
+            <section class="xdl-main-row">
+                <div class="@LeftDockCssClass" style="@LeftDockStyle">
+                    <DockRegionView Region="DockRegionName.LeftDockUpper"
+                                    Panels="PanelsFor(DockRegionName.LeftDockUpper)"
+                                    ContentRegistry="ContentRegistry"
+                                    EmptyPanelTemplate="EmptyPanelTemplate"
+                                    OnActivate="ActivatePanelAsync"
+                                    OnCollapse="CollapsePanelAsync"
+                                    OnAutoHide="ToggleAutoHideAsync"
+                                    OnMove="MovePanelFromMenuAsync" />
+                    <DockSplitter SplitterId="layout-left-regions" Orientation="SplitOrientation.Horizontal" AriaLabel="Resize left dock regions"
+                                  Value="@(Snapshot.Geometry.LeftUpperRatio * 100d)"
+                                  ValueChanged="ResizeLeftRegionsAsync"
+                                  OnCollapse="ToggleLeftRegionsAsync"
+                                  Collapsed="Snapshot.Geometry.LeftLowerCollapsed"
+                                  ShowCollapseButton="Options.ShowSplitterCollapseButtons"
+                                  CollapseEnabled="Options.EnableSplitterCollapse" />
+                    <DockRegionView Region="DockRegionName.LeftDockLower"
+                                    Panels="PanelsFor(DockRegionName.LeftDockLower)"
+                                    ContentRegistry="ContentRegistry"
+                                    EmptyPanelTemplate="EmptyPanelTemplate"
+                                    OnActivate="ActivatePanelAsync"
+                                    OnCollapse="CollapsePanelAsync"
+                                    OnAutoHide="ToggleAutoHideAsync"
+                                    OnMove="MovePanelFromMenuAsync" />
+                </div>
+
+                <DockSplitter SplitterId="layout-left-editor" Orientation="SplitOrientation.Vertical" AriaLabel="Resize left dock and editor"
+                              Value="@(Snapshot.Geometry.LeftDockRatio * 100d)"
+                              ValueChanged="ResizeLeftDockAsync"
+                              OnCollapse="ToggleLeftDockAsync"
+                              Collapsed="Snapshot.Geometry.LeftDockCollapsed"
+                              CollapseFirst="true"
+                              ShowCollapseButton="Options.ShowSplitterCollapseButtons"
+                              CollapseEnabled="Options.EnableSplitterCollapse" />
+
+                <EditorAreaView Root="Snapshot.EditorRoot"
+                                Views="Snapshot.EditorViews"
+                                ContentRegistry="ContentRegistry"
+                                OverflowMode="Options.TabOverflowMode"
+                                EmptyEditorTemplate="EmptyEditorTemplate"
+                                OnActivateTab="ActivateTabAsync"
+                                OnCloseTab="CloseTabAsync"
+                                OnPinTab="PinTabAsync"
+                                OnTabContextAction="HandleTabContextActionAsync"
+                                OnResizeSplit="ResizeEditorSplitAsync"
+                                OnToggleSplitCollapse="ToggleEditorSplitCollapseAsync"
+                                ShowSplitterCollapseButtons="Options.ShowSplitterCollapseButtons"
+                                EnableSplitterCollapse="Options.EnableSplitterCollapse" />
+
+                <DockSplitter SplitterId="layout-editor-right" Orientation="SplitOrientation.Vertical" AriaLabel="Resize editor and right dock"
+                              Value="@(Snapshot.Geometry.RightDockRatio * 100d)"
+                              ValueChanged="ResizeRightDockAsync"
+                              OnCollapse="ToggleRightDockAsync"
+                              Collapsed="Snapshot.Geometry.RightDockCollapsed"
+                              ShowCollapseButton="Options.ShowSplitterCollapseButtons"
+                              CollapseEnabled="Options.EnableSplitterCollapse" />
+
+                <div class="@RightDockCssClass" style="@RightDockStyle">
+                    <DockRegionView Region="DockRegionName.RightDockUpper"
+                                    Panels="PanelsFor(DockRegionName.RightDockUpper)"
+                                    ContentRegistry="ContentRegistry"
+                                    EmptyPanelTemplate="EmptyPanelTemplate"
+                                    OnActivate="ActivatePanelAsync"
+                                    OnCollapse="CollapsePanelAsync"
+                                    OnAutoHide="ToggleAutoHideAsync"
+                                    OnMove="MovePanelFromMenuAsync" />
+                    <DockSplitter SplitterId="layout-right-regions" Orientation="SplitOrientation.Horizontal" AriaLabel="Resize right dock regions"
+                                  Value="@(Snapshot.Geometry.RightUpperRatio * 100d)"
+                                  ValueChanged="ResizeRightRegionsAsync"
+                                  OnCollapse="ToggleRightRegionsAsync"
+                                  Collapsed="Snapshot.Geometry.RightLowerCollapsed"
+                                  ShowCollapseButton="Options.ShowSplitterCollapseButtons"
+                                  CollapseEnabled="Options.EnableSplitterCollapse" />
+                    <DockRegionView Region="DockRegionName.RightDockLower"
+                                    Panels="PanelsFor(DockRegionName.RightDockLower)"
+                                    ContentRegistry="ContentRegistry"
+                                    EmptyPanelTemplate="EmptyPanelTemplate"
+                                    OnActivate="ActivatePanelAsync"
+                                    OnCollapse="CollapsePanelAsync"
+                                    OnAutoHide="ToggleAutoHideAsync"
+                                    OnMove="MovePanelFromMenuAsync" />
+                </div>
+            </section>
+
+            <DockSplitter SplitterId="layout-work-bottom" Orientation="SplitOrientation.Horizontal" AriaLabel="Resize work area and bottom dock"
+                          Value="@(Snapshot.Geometry.BottomDockRatio * 100d)"
+                          ValueChanged="ResizeBottomDockAsync"
+                          OnCollapse="ToggleBottomDockAsync"
+                          Collapsed="Snapshot.Geometry.BottomDockCollapsed"
+                          ShowCollapseButton="Options.ShowSplitterCollapseButtons"
+                          CollapseEnabled="Options.EnableSplitterCollapse" />
+
+            <section class="@BottomDockCssClass" style="@BottomDockStyle">
+                <DockRegionView Region="DockRegionName.BottomLeftDock"
+                                Panels="PanelsFor(DockRegionName.BottomLeftDock)"
+                                ContentRegistry="ContentRegistry"
+                                EmptyPanelTemplate="EmptyPanelTemplate"
+                                OnActivate="ActivatePanelAsync"
+                                OnCollapse="CollapsePanelAsync"
+                                OnAutoHide="ToggleAutoHideAsync"
+                                OnMove="MovePanelFromMenuAsync" />
+                <DockSplitter SplitterId="layout-bottom-regions" Orientation="SplitOrientation.Vertical" AriaLabel="Resize bottom dock regions"
+                              Value="@(Snapshot.Geometry.BottomLeftRatio * 100d)"
+                              ValueChanged="ResizeBottomRegionsAsync"
+                              OnCollapse="ToggleBottomRegionsAsync"
+                              Collapsed="Snapshot.Geometry.BottomRightCollapsed"
+                              ShowCollapseButton="Options.ShowSplitterCollapseButtons"
+                              CollapseEnabled="Options.EnableSplitterCollapse" />
+                <DockRegionView Region="DockRegionName.BottomRightDock"
+                                Panels="PanelsFor(DockRegionName.BottomRightDock)"
+                                ContentRegistry="ContentRegistry"
+                                EmptyPanelTemplate="EmptyPanelTemplate"
+                                OnActivate="ActivatePanelAsync"
+                                OnCollapse="CollapsePanelAsync"
+                                OnAutoHide="ToggleAutoHideAsync"
+                                OnMove="MovePanelFromMenuAsync" />
+            </section>
+        </main>
+
+        <DockToolBar Side="right"
+                     Panels="RightToolPanels"
+                     OnToggle="TogglePanelAsync"
+                     OnHide="HideToolPanelAsync"
+                     OnShow="ShowToolPanelAsync"
+                     OnHover="ShowAutoHidePanelAsync"
+                     OnLeave="ScheduleAutoHideCloseAsync" />
+    </div>
+
+
+    @if (AutoHidePanel is { } autoHidePanel)
+    {
+        <aside class="@AutoHideFlyoutCssClass"
+               @onmouseenter="CancelAutoHideClose"
+               @onmouseleave="() => ScheduleAutoHideCloseAsync(autoHidePanel.Id)">
+            <DockPanelView Panel="autoHidePanel"
+                           ContentRegistry="ContentRegistry"
+                           EmptyPanelTemplate="EmptyPanelTemplate"
+                           OnActivate="ActivatePanelAsync"
+                           OnCollapse="CloseAutoHideFlyoutAsync"
+                           OnAutoHide="ToggleAutoHideAsync"
+                           OnMove="MovePanelFromMenuAsync" />
+        </aside>
+    }
+
+    @if (StatusBarTemplate is not null)
+    {
+        <footer class="xdl-status-bar" aria-label="Status bar">
+            @StatusBarTemplate
+        </footer>
+    }
+
+    <DockOverlay Visible="false" Message="" />
+    </CascadingValue>
+</div>
+
+@code {
+    private readonly string _instanceId = $"xdl-{Guid.NewGuid():N}";
+    private ElementReference _rootElement;
+    private DockLayoutController? _controller;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<DockLayout>? _dotNetReference;
+    private bool _readyRaised;
+    private string? _autoHidePanelId;
+    private string? _activeEditorViewId;
+    private CancellationTokenSource? _autoHideCloseCancellation;
+
+    /// <summary>Gets or sets the declarative initial layout definition.</summary>
+    [Parameter, EditorRequired]
+    public DockLayoutDefinition Definition { get; set; } = new();
+
+    /// <summary>Gets or sets behavior options.</summary>
+    [Parameter]
+    public DockLayoutOptions Options { get; set; } = new();
+
+    /// <summary>Gets or sets an additional root CSS class.</summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>Gets or sets safe inline sizing styles supplied by the consumer.</summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>Gets or sets the top toolbar content.</summary>
+    [Parameter]
+    public RenderFragment? TopToolbarTemplate { get; set; }
+
+    /// <summary>Gets or sets the status bar content.</summary>
+    [Parameter]
+    public RenderFragment? StatusBarTemplate { get; set; }
+
+    /// <summary>Gets or sets the empty DockPanel template.</summary>
+    [Parameter]
+    public RenderFragment<DockPanelInfo>? EmptyPanelTemplate { get; set; }
+
+    /// <summary>Gets or sets the empty EditorView template.</summary>
+    [Parameter]
+    public RenderFragment<EditorViewInfo>? EmptyEditorTemplate { get; set; }
+
+    /// <summary>Gets or sets the ready callback.</summary>
+    [Parameter]
+    public EventCallback<DockLayoutReadyEventArgs> OnReady { get; set; }
+
+    /// <summary>Gets or sets the layout changed callback.</summary>
+    [Parameter]
+    public EventCallback<DockLayoutChangedEventArgs> OnLayoutChanged { get; set; }
+
+    /// <summary>Gets or sets the tab opened callback.</summary>
+    [Parameter]
+    public EventCallback<DockTabEventArgs> OnTabOpened { get; set; }
+
+    /// <summary>Gets or sets the tab activated callback.</summary>
+    [Parameter]
+    public EventCallback<DockTabEventArgs> OnTabActivated { get; set; }
+
+    /// <summary>Gets or sets the tab closed callback.</summary>
+    [Parameter]
+    public EventCallback<DockTabEventArgs> OnTabClosed { get; set; }
+
+    /// <summary>Gets or sets the panel created callback.</summary>
+    [Parameter]
+    public EventCallback<DockPanelEventArgs> OnPanelCreated { get; set; }
+
+    /// <summary>Gets or sets the panel removed callback.</summary>
+    [Parameter]
+    public EventCallback<DockPanelEventArgs> OnPanelRemoved { get; set; }
+
+    /// <summary>Gets or sets the layout restored callback.</summary>
+    [Parameter]
+    public EventCallback<DockLayoutRestoredEventArgs> OnLayoutRestored { get; set; }
+
+    /// <summary>Gets the programmatic layout handle after initialization.</summary>
+    public IDockLayoutHandle? Handle => _controller;
+
+    private string? SafeStyle => SanitizeStyle(Style);
+    private string RootStyle
+    {
+        get
+        {
+            var geometry = Snapshot.Geometry;
+            var leftSize = geometry.LeftDockCollapsed ? "0px" : Percent(geometry.LeftDockRatio);
+            var rightSize = geometry.RightDockCollapsed ? "0px" : Percent(geometry.RightDockRatio);
+            var bottomSize = geometry.BottomDockCollapsed ? "0px" : Percent(geometry.BottomDockRatio);
+            var internalStyle = $"--xdl-left-size:{leftSize};--xdl-right-size:{rightSize};--xdl-bottom-size:{bottomSize};--xdl-left-upper-size:{Percent(geometry.LeftUpperRatio)};--xdl-right-upper-size:{Percent(geometry.RightUpperRatio)};--xdl-bottom-left-size:{Percent(geometry.BottomLeftRatio)}";
+            return string.IsNullOrWhiteSpace(SafeStyle) ? internalStyle : $"{internalStyle};{SafeStyle}";
+        }
+    }
+
+    private static string? SanitizeStyle(string? style)
+    {
+        if (string.IsNullOrWhiteSpace(style)) return null;
+        if (style.Contains('<') || style.Contains('>') ||
+            style.Contains("url(", StringComparison.OrdinalIgnoreCase) || style.Contains("expression", StringComparison.OrdinalIgnoreCase) ||
+            style.Contains("javascript:", StringComparison.OrdinalIgnoreCase)) return null;
+        var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "width", "height", "min-width", "min-height", "max-width", "max-height"
+        };
+        var declarations = new List<string>();
+        foreach (var raw in style.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var separator = raw.IndexOf(':', StringComparison.Ordinal);
+            if (separator <= 0) continue;
+            var name = raw[..separator].Trim();
+            var value = raw[(separator + 1)..].Trim();
+            if ((allowed.Contains(name) || name.StartsWith("--xdl-", StringComparison.Ordinal)) && value.Length <= 256)
+            {
+                declarations.Add($"{name}:{value}");
+            }
+        }
+        return declarations.Count == 0 ? null : string.Join(";", declarations);
+    }
+
+    private DockLayoutSnapshot Snapshot { get; set; } = new()
+    {
+        Version = "1.0.0",
+        InstanceId = "pending",
+        Panels = Array.Empty<DockPanelInfo>(),
+        EditorViews = new[] { new EditorViewInfo { Id = "view-main", Lifecycle = EditorViewLifecycle.Template } },
+        EditorRoot = new EditorLeafInfo { Id = "leaf-view-main", ViewId = "view-main" }
+    };
+
+    private string RootCssClass
+    {
+        get
+        {
+            var classes = new List<string> { "xdl-layout" };
+            if (Options.EnableThemeSupport) classes.Add(Options.Theme == DockThemeMode.Light ? "xdl-theme-light" : "xdl-theme-dark");
+            if (Snapshot.Geometry.LeftDockCollapsed) classes.Add("xdl-left-dock-collapsed");
+            if (Snapshot.Geometry.RightDockCollapsed) classes.Add("xdl-right-dock-collapsed");
+            if (Snapshot.Geometry.BottomDockCollapsed) classes.Add("xdl-bottom-dock-collapsed");
+            if (!HasLeftDock) classes.Add("xdl-no-left-dock");
+            if (!HasRightDock) classes.Add("xdl-no-right-dock");
+            if (!HasBottomDock) classes.Add("xdl-no-bottom-dock");
+            if (!string.IsNullOrWhiteSpace(Class)) classes.Add(Class);
+            return string.Join(" ", classes);
+        }
+    }
+
+    private bool HasLeftDock => Snapshot.Panels.Any(panel => panel.Visible && panel.Region is (DockRegionName.LeftDockUpper or DockRegionName.LeftDockLower));
+    private bool HasRightDock => Snapshot.Panels.Any(panel => panel.Visible && panel.Region is (DockRegionName.RightDockUpper or DockRegionName.RightDockLower));
+    private bool HasBottomDock => Snapshot.Panels.Any(panel => panel.Visible && panel.Region is (DockRegionName.BottomLeftDock or DockRegionName.BottomRightDock));
+    private bool HasRegion(DockRegionName region) => Snapshot.Panels.Any(panel => panel.Visible && panel.Region == region);
+    private string LeftDockCssClass => $"xdl-side-dock xdl-side-dock-left {(HasRegion(DockRegionName.LeftDockUpper) ? "xdl-has-upper" : string.Empty)} {(HasRegion(DockRegionName.LeftDockLower) ? "xdl-has-lower" : string.Empty)}";
+    private string RightDockCssClass => $"xdl-side-dock xdl-side-dock-right {(HasRegion(DockRegionName.RightDockUpper) ? "xdl-has-upper" : string.Empty)} {(HasRegion(DockRegionName.RightDockLower) ? "xdl-has-lower" : string.Empty)}";
+    private string BottomDockCssClass => $"xdl-bottom-dock {(HasRegion(DockRegionName.BottomLeftDock) ? "xdl-has-left" : string.Empty)} {(HasRegion(DockRegionName.BottomRightDock) ? "xdl-has-right" : string.Empty)}";
+    private string LeftDockStyle => SideDockGridStyle(HasRegion(DockRegionName.LeftDockUpper), HasRegion(DockRegionName.LeftDockLower), Snapshot.Geometry.LeftLowerCollapsed, "--xdl-left-upper-size");
+    private string RightDockStyle => SideDockGridStyle(HasRegion(DockRegionName.RightDockUpper), HasRegion(DockRegionName.RightDockLower), Snapshot.Geometry.RightLowerCollapsed, "--xdl-right-upper-size");
+    private string BottomDockStyle => HorizontalDockGridStyle(HasRegion(DockRegionName.BottomLeftDock), HasRegion(DockRegionName.BottomRightDock), Snapshot.Geometry.BottomRightCollapsed, "--xdl-bottom-left-size");
+
+    private static string SideDockGridStyle(bool hasFirst, bool hasSecond, bool secondCollapsed, string ratioVariable)
+    {
+        if (hasFirst && (!hasSecond || secondCollapsed)) return "grid-template-rows:minmax(0,1fr) var(--xdl-splitter-size) 0";
+        if (!hasFirst && hasSecond) return "grid-template-rows:0 0 minmax(0,1fr)";
+        return $"grid-template-rows:minmax(0,var({ratioVariable})) var(--xdl-splitter-size) minmax(0,calc(100% - var({ratioVariable}) - var(--xdl-splitter-size)))";
+    }
+
+    private static string HorizontalDockGridStyle(bool hasFirst, bool hasSecond, bool secondCollapsed, string ratioVariable)
+    {
+        if (hasFirst && (!hasSecond || secondCollapsed)) return "grid-template-columns:minmax(0,1fr) var(--xdl-splitter-size) 0";
+        if (!hasFirst && hasSecond) return "grid-template-columns:0 0 minmax(0,1fr)";
+        return $"grid-template-columns:minmax(0,var({ratioVariable})) var(--xdl-splitter-size) minmax(0,calc(100% - var({ratioVariable}) - var(--xdl-splitter-size)))";
+    }
+
+    private static string Percent(double ratio) => $"{Math.Clamp(ratio, 0d, 1d) * 100d:0.####}%";
+    private IReadOnlyList<DockPanelInfo> LeftToolPanels => Snapshot.Panels.Where(panel => IsLeft(panel.Region)).OrderBy(panel => panel.Region).ThenBy(panel => panel.Order).ToArray();
+    private IReadOnlyList<DockPanelInfo> RightToolPanels => Snapshot.Panels.Where(panel => !IsLeft(panel.Region)).OrderBy(panel => panel.Region).ThenBy(panel => panel.Order).ToArray();
+    private DockPanelInfo? AutoHidePanel => _autoHidePanelId is null ? null : Snapshot.Panels.FirstOrDefault(panel => panel.Id == _autoHidePanelId && panel.AutoHide && panel.Visible);
+    private string AutoHideFlyoutCssClass => AutoHidePanel is not null && IsLeft(AutoHidePanel.Region)
+        ? "xdl-auto-hide-flyout xdl-auto-hide-flyout-left"
+        : "xdl-auto-hide-flyout xdl-auto-hide-flyout-right";
+
+    protected override void OnInitialized()
+    {
+        _controller = new DockLayoutController(_instanceId, Definition, Options, ContentRegistry, Serializer, Persistence);
+        Snapshot = _controller.GetSnapshotAsync().AsTask().GetAwaiter().GetResult();
+        _activeEditorViewId = Snapshot.EditorViews.FirstOrDefault(view => view.ActiveTabId is not null)?.Id
+            ?? Snapshot.EditorViews.FirstOrDefault()?.Id;
+        _controller.LayoutChanged += HandleLayoutChanged;
+        _controller.TabOpened += HandleTabOpened;
+        _controller.TabActivated += HandleTabActivated;
+        _controller.TabClosed += HandleTabClosed;
+        _controller.PanelCreated += HandlePanelCreated;
+        _controller.PanelRemoved += HandlePanelRemoved;
+        _controller.LayoutRestored += HandleLayoutRestored;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _controller is null) return;
+        try
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/XLib.DockLayout/js/xlib-dock-layout.js");
+            _dotNetReference = DotNetObjectReference.Create(this);
+            await _module.InvokeVoidAsync("initialize", _instanceId, _rootElement, _dotNetReference, new { Options.DragThreshold });
+            await _controller.RestoreAutoSaveAsync();
+        }
+        catch (InvalidOperationException)
+        {
+            // Static rendering and some component-test hosts do not provide a browser JS runtime.
+        }
+        catch (JSException)
+        {
+            // Browser interop failure is non-fatal; C# state and rendering remain usable.
+        }
+
+        if (!_readyRaised)
+        {
+            _readyRaised = true;
+            await OnReady.InvokeAsync(new DockLayoutReadyEventArgs
+            {
+                InstanceId = _instanceId,
+                Reason = DockLayoutChangeReason.Initialization,
+                Revision = Snapshot.Revision,
+                Handle = _controller
+            });
+        }
+    }
+
+    /// <summary>Receives debounced container measurements from the isolated JS module.</summary>
+    [JSInvokable]
+    public Task NotifyResizeAsync(double width, double height)
+    {
+        _ = width;
+        _ = height;
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Commits a validated browser tab drag to the C# state authority.</summary>
+    [JSInvokable]
+    public async Task<DockLayoutResult> CommitTabDragAsync(TabDragCommit commit)
+    {
+        if (_controller is null) return DockLayoutResult.Fail("LAYOUT_NOT_READY", "DockLayout is not ready.");
+        if (!Snapshot.EditorViews.Any(view => view.Id == commit.SourceViewId && view.Tabs.Any(tab => tab.Id == commit.TabId)))
+        {
+            return DockLayoutResult.Fail("TAB_DRAG_SOURCE_INVALID", "The dragged tab is not owned by the declared source view.");
+        }
+        return await _controller.MoveTabAsync(commit.TabId, commit.TargetViewId, commit.Direction, commit.TargetIndex);
+    }
+
+    /// <summary>Commits a validated browser panel drag to the C# state authority.</summary>
+    [JSInvokable]
+    public Task<DockLayoutResult> CommitPanelDragAsync(PanelDragCommit commit) =>
+        _controller is null
+            ? Task.FromResult(DockLayoutResult.Fail("LAYOUT_NOT_READY", "DockLayout is not ready."))
+            : _controller.MovePanelAsync(commit.PanelId, commit.TargetRegion, commit.TargetIndex).AsTask();
+
+    /// <summary>Commits a browser splitter drag to the C# state authority.</summary>
+    [JSInvokable]
+    public Task<DockLayoutResult> CommitSplitterDragAsync(EditorSplitResizeRequest request) =>
+        _controller is null
+            ? Task.FromResult(DockLayoutResult.Fail("LAYOUT_NOT_READY", "DockLayout is not ready."))
+            : _controller.ResizeEditorSplitAsync(request.SplitId, request.FirstRatio).AsTask();
+
+    /// <summary>Commits a browser top-level layout splitter drag to the C# state authority.</summary>
+    [JSInvokable]
+    public Task<DockLayoutResult> CommitLayoutSplitterDragAsync(LayoutSplitterResizeRequest request) =>
+        _controller is null
+            ? Task.FromResult(DockLayoutResult.Fail("LAYOUT_NOT_READY", "DockLayout is not ready."))
+            : _controller.ResizeLayoutSplitterAsync(request.SplitterId, request.Ratio).AsTask();
+
+    private IReadOnlyList<DockPanelInfo> PanelsFor(DockRegionName region) =>
+        Snapshot.Panels.Where(panel => panel.Visible && panel.Region == region).OrderBy(panel => panel.Order).ToArray();
+
+    private async Task TogglePanelAsync(string panelId)
+    {
+        if (_controller is null) return;
+        var panel = Snapshot.Panels.FirstOrDefault(item => item.Id == panelId);
+        if (panel is null) return;
+        if (panel.AutoHide)
+        {
+            _autoHidePanelId = _autoHidePanelId == panelId ? null : panelId;
+            await InvokeAsync(StateHasChanged);
+        }
+        else if (panel.Active && panel.Visible && !panel.Collapsed)
+        {
+            await _controller.CollapsePanelAsync(panelId);
+        }
+        else
+        {
+            await _controller.ExpandPanelAsync(panelId);
+        }
+    }
+
+    private Task ActivatePanelAsync(string panelId) => _controller is null ? Task.CompletedTask : _controller.ExpandPanelAsync(panelId).AsTask();
+    private Task CollapsePanelAsync(string panelId) => _controller is null ? Task.CompletedTask : _controller.CollapsePanelAsync(panelId).AsTask();
+
+    private async Task HideToolPanelAsync(string panelId)
+    {
+        if (_controller is null)
+        {
+            return;
+        }
+
+        if (_autoHidePanelId == panelId)
+        {
+            _autoHidePanelId = null;
+        }
+
+        await _controller.SetToolBarEntryVisibilityAsync(panelId, false);
+    }
+
+    private async Task ShowToolPanelAsync(string panelId)
+    {
+        if (_controller is null)
+        {
+            return;
+        }
+
+        await _controller.SetToolBarEntryVisibilityAsync(panelId, true);
+    }
+
+    private Task MovePanelFromMenuAsync(PanelDragCommit request) =>
+        _controller is null
+            ? Task.CompletedTask
+            : _controller.MovePanelAsync(request.PanelId, request.TargetRegion, request.TargetIndex).AsTask();
+    private async Task ActivateTabAsync(string tabId)
+    {
+        if (_controller is null) return;
+        var tab = Snapshot.EditorViews.SelectMany(view => view.Tabs).FirstOrDefault(item => item.Id == tabId);
+        if (tab is not null) _activeEditorViewId = tab.ViewId;
+        await _controller.ActivateTabAsync(tabId);
+    }
+
+    private async Task CloseTabAsync(string tabId)
+    {
+        if (_controller is null) return;
+        var tab = Snapshot.EditorViews.SelectMany(view => view.Tabs).FirstOrDefault(item => item.Id == tabId);
+        if (tab is not null) _activeEditorViewId = tab.ViewId;
+        await _controller.CloseTabAsync(tabId);
+    }
+
+    private Task ResizeEditorSplitAsync(EditorSplitResizeRequest request) =>
+        _controller is null ? Task.CompletedTask : _controller.ResizeEditorSplitAsync(request.SplitId, request.FirstRatio).AsTask();
+
+    private Task ToggleEditorSplitCollapseAsync(SplitterCollapseRequest request) =>
+        _controller is null || !Options.EnableSplitterCollapse
+            ? Task.CompletedTask
+            : _controller.ToggleEditorSplitCollapseAsync(request.SplitterId).AsTask();
+
+    private Task ResizeLayoutSplitterAsync(string splitterId, double percent) =>
+        _controller is null
+            ? Task.CompletedTask
+            : _controller.ResizeLayoutSplitterAsync(splitterId, Math.Clamp(percent / 100d, 0.05d, 0.95d)).AsTask();
+
+    private Task ToggleLayoutSplitterCollapseAsync(string splitterId) =>
+        _controller is null || !Options.EnableSplitterCollapse
+            ? Task.CompletedTask
+            : _controller.ToggleLayoutSplitterCollapseAsync(splitterId).AsTask();
+
+    private Task ResizeLeftRegionsAsync(double value) => ResizeLayoutSplitterAsync("layout-left-regions", value);
+    private Task ToggleLeftRegionsAsync() => ToggleLayoutSplitterCollapseAsync("layout-left-regions");
+    private Task ResizeLeftDockAsync(double value) => ResizeLayoutSplitterAsync("layout-left-editor", value);
+    private Task ToggleLeftDockAsync() => ToggleLayoutSplitterCollapseAsync("layout-left-editor");
+    private Task ResizeRightDockAsync(double value) => ResizeLayoutSplitterAsync("layout-editor-right", value);
+    private Task ToggleRightDockAsync() => ToggleLayoutSplitterCollapseAsync("layout-editor-right");
+    private Task ResizeRightRegionsAsync(double value) => ResizeLayoutSplitterAsync("layout-right-regions", value);
+    private Task ToggleRightRegionsAsync() => ToggleLayoutSplitterCollapseAsync("layout-right-regions");
+    private Task ResizeBottomDockAsync(double value) => ResizeLayoutSplitterAsync("layout-work-bottom", value);
+    private Task ToggleBottomDockAsync() => ToggleLayoutSplitterCollapseAsync("layout-work-bottom");
+    private Task ResizeBottomRegionsAsync(double value) => ResizeLayoutSplitterAsync("layout-bottom-regions", value);
+    private Task ToggleBottomRegionsAsync() => ToggleLayoutSplitterCollapseAsync("layout-bottom-regions");
+
+    private async Task HandleTabContextActionAsync(EditorTabContextActionRequest request)
+    {
+        if (_controller is null) return;
+        var view = Snapshot.EditorViews.FirstOrDefault(item => item.Id == request.ViewId);
+        var tab = view?.Tabs.FirstOrDefault(item => item.Id == request.TabId);
+        if (view is null || tab is null) return;
+
+        switch (request.Action)
+        {
+            case EditorTabContextAction.Close:
+                if (tab.Closable) await _controller.CloseTabAsync(tab.Id);
+                break;
+            case EditorTabContextAction.CloseOthers:
+                await CloseTabsAsync(view.Tabs.Where(item => item.Id != tab.Id && item.Closable));
+                break;
+            case EditorTabContextAction.CloseAll:
+                await CloseTabsAsync(view.Tabs.Where(item => item.Closable));
+                break;
+            case EditorTabContextAction.CloseToLeft:
+                await CloseTabsAsync(view.Tabs.Where(item => item.Order < tab.Order && item.Closable));
+                break;
+            case EditorTabContextAction.CloseToRight:
+                await CloseTabsAsync(view.Tabs.Where(item => item.Order > tab.Order && item.Closable));
+                break;
+            case EditorTabContextAction.SplitRight:
+                await DuplicateTabIntoSplitAsync(tab, SplitOrientation.Vertical);
+                break;
+            case EditorTabContextAction.SplitAndMoveRight:
+                await _controller.MoveTabAsync(tab.Id, view.Id, DockDirection.Right);
+                break;
+            case EditorTabContextAction.SplitDown:
+                await DuplicateTabIntoSplitAsync(tab, SplitOrientation.Horizontal);
+                break;
+            case EditorTabContextAction.SplitAndMoveDown:
+                await _controller.MoveTabAsync(tab.Id, view.Id, DockDirection.Bottom);
+                break;
+        }
+    }
+
+    private async Task CloseTabsAsync(IEnumerable<EditorTabInfo> tabs)
+    {
+        if (_controller is null) return;
+        foreach (var tab in tabs.OrderByDescending(item => item.Order).ToArray())
+        {
+            await _controller.CloseTabAsync(tab.Id);
+        }
+    }
+
+    private async Task DuplicateTabIntoSplitAsync(EditorTabInfo tab, SplitOrientation orientation)
+    {
+        if (_controller is null) return;
+        var split = await _controller.SplitEditorViewAsync(tab.ViewId, orientation);
+        if (!split.Success || string.IsNullOrWhiteSpace(split.Value)) return;
+        await _controller.OpenTabAsync(new OpenEditorTabRequest
+        {
+            ViewId = split.Value,
+            ContentId = tab.ContentId,
+            Title = tab.Title,
+            Icon = tab.Icon,
+            Closable = tab.Closable,
+            Pinned = tab.Pinned,
+            DedupParameter = tab.DedupParameter,
+            Parameters = tab.Parameters
+        });
+    }
+
+    private async Task ToggleAutoHideAsync(string panelId)
+    {
+        if (_controller is null) return;
+        var panel = Snapshot.Panels.FirstOrDefault(item => item.Id == panelId);
+        if (panel is null) return;
+        var result = await _controller.SetPanelAutoHideAsync(panelId, !panel.AutoHide);
+        if (result.Success) _autoHidePanelId = null;
+    }
+
+    private Task ShowAutoHidePanelAsync(string panelId)
+    {
+        CancelAutoHideClose();
+        var panel = Snapshot.Panels.FirstOrDefault(item => item.Id == panelId);
+        if (panel?.AutoHide == true)
+        {
+            _autoHidePanelId = panelId;
+            return InvokeAsync(StateHasChanged);
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task ScheduleAutoHideCloseAsync(string panelId)
+    {
+        if (_autoHidePanelId != panelId) return;
+        CancelAutoHideClose();
+        var cancellation = new CancellationTokenSource();
+        _autoHideCloseCancellation = cancellation;
+        try
+        {
+            await Task.Delay(300, cancellation.Token);
+            _autoHidePanelId = null;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void CancelAutoHideClose()
+    {
+        _autoHideCloseCancellation?.Cancel();
+        _autoHideCloseCancellation?.Dispose();
+        _autoHideCloseCancellation = null;
+    }
+
+    private Task CloseAutoHideFlyoutAsync(string panelId)
+    {
+        if (_autoHidePanelId == panelId) _autoHidePanelId = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task PinTabAsync(string tabId)
+    {
+        if (_controller is null) return;
+        var tab = Snapshot.EditorViews.SelectMany(view => view.Tabs).FirstOrDefault(item => item.Id == tabId);
+        if (tab is not null) await _controller.SetTabPinnedAsync(tabId, !tab.Pinned);
+    }
+
+    private async Task HandleRootKeyDown(KeyboardEventArgs args)
+    {
+        if (_controller is null || !args.CtrlKey) return;
+        var activeView = Snapshot.EditorViews.FirstOrDefault(view => view.Id == _activeEditorViewId && view.ActiveTabId is not null)
+            ?? Snapshot.EditorViews.FirstOrDefault(view => view.ActiveTabId is not null);
+        if (activeView is null || activeView.Tabs.Count == 0) return;
+        _activeEditorViewId = activeView.Id;
+        if (args.Key.Equals("Tab", StringComparison.OrdinalIgnoreCase))
+        {
+            var activeIndex = activeView.Tabs.ToList().FindIndex(tab => tab.Id == activeView.ActiveTabId);
+            var next = activeView.Tabs[(activeIndex + 1) % activeView.Tabs.Count];
+            await ActivateTabAsync(next.Id);
+        }
+        else if (args.Key.Equals("w", StringComparison.OrdinalIgnoreCase) && activeView.ActiveTabId is not null)
+        {
+            await CloseTabAsync(activeView.ActiveTabId);
+        }
+    }
+
+    private async void HandleLayoutChanged(object? sender, DockLayoutChangedEventArgs args)
+    {
+        Snapshot = args.Snapshot;
+        if (_activeEditorViewId is not null && !Snapshot.EditorViews.Any(view => view.Id == _activeEditorViewId))
+        {
+            _activeEditorViewId = Snapshot.EditorViews.FirstOrDefault(view => view.ActiveTabId is not null)?.Id;
+        }
+        await InvokeAsync(StateHasChanged);
+        await OnLayoutChanged.InvokeAsync(args);
+    }
+    private async void HandleTabOpened(object? sender, DockTabEventArgs args) => await OnTabOpened.InvokeAsync(args);
+    private async void HandleTabActivated(object? sender, DockTabEventArgs args)
+    {
+        _activeEditorViewId = args.Tab.ViewId;
+        await OnTabActivated.InvokeAsync(args);
+    }
+    private async void HandleTabClosed(object? sender, DockTabEventArgs args) => await OnTabClosed.InvokeAsync(args);
+    private async void HandlePanelCreated(object? sender, DockPanelEventArgs args) => await OnPanelCreated.InvokeAsync(args);
+    private async void HandlePanelRemoved(object? sender, DockPanelEventArgs args) => await OnPanelRemoved.InvokeAsync(args);
+    private async void HandleLayoutRestored(object? sender, DockLayoutRestoredEventArgs args) => await OnLayoutRestored.InvokeAsync(args);
+
+    private static bool IsLeft(DockRegionName region) => region is DockRegionName.LeftDockUpper or DockRegionName.LeftDockLower or DockRegionName.BottomLeftDock;
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        CancelAutoHideClose();
+        if (_controller is not null)
+        {
+            _controller.LayoutChanged -= HandleLayoutChanged;
+            _controller.TabOpened -= HandleTabOpened;
+            _controller.TabActivated -= HandleTabActivated;
+            _controller.TabClosed -= HandleTabClosed;
+            _controller.PanelCreated -= HandlePanelCreated;
+            _controller.PanelRemoved -= HandlePanelRemoved;
+            _controller.LayoutRestored -= HandleLayoutRestored;
+        }
+        if (_module is not null)
+        {
+            try { await _module.InvokeVoidAsync("destroy", _instanceId); } catch (JSDisconnectedException) { }
+            await _module.DisposeAsync();
+        }
+        _dotNetReference?.Dispose();
+        if (_controller is not null) await _controller.DisposeAsync();
+    }
+}

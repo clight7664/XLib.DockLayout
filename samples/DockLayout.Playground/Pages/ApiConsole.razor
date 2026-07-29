@@ -1,0 +1,6 @@
+@page "/api-console"
+<PageTitle>DockLayout API Console</PageTitle>
+<h1>API Console</h1>
+<p>The Workbench page exposes Open, Close, Activate, Split, MovePanel, Export, Import and Preset operations against the RCL handle. This page documents the live contract.</p>
+<pre>@ApiContract</pre>
+@code { private const string ApiContract = "IDockLayoutHandle: OpenTabAsync | CloseTabAsync | ActivateTabAsync | FindTabsAsync | SetTabPinnedAsync | MoveTabAsync | SplitEditorViewAsync | CollapsePanelAsync | ExpandPanelAsync | SetPanelVisibilityAsync | MovePanelAsync | ExportLayoutXmlAsync | ImportLayoutXmlAsync | SavePresetAsync | RestorePresetAsync | DeletePresetAsync | GetSnapshotAsync | DisposeAsync"; }

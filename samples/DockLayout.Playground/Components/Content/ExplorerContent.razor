@@ -1,0 +1,124 @@
+<div class="demo-explorer-content">
+    <strong>Solution 'XLib.DockLayout'</strong>
+    <TreeView Items="Items"
+              @bind-SelectedItemId="_selectedItemId"
+              OnItemActivated="OpenItemAsync"
+              AriaLabel="XLib.DockLayout solution tree" />
+    @if (!string.IsNullOrWhiteSpace(_selectedItemId))
+    {
+        <div class="demo-tree-selection">Selected: @_selectedItemId · double-click a file to open it</div>
+    }
+</div>
+
+@code {
+    private string? _selectedItemId = "file-dock-layout";
+
+    [CascadingParameter(Name = "XLibDockLayoutHandle")]
+    private IDockLayoutHandle? LayoutHandle { get; set; }
+
+    private static IReadOnlyList<TreeViewItem> Items { get; } = new[]
+    {
+        new TreeViewItem
+        {
+            Id = "solution",
+            Label = "XLib.DockLayout",
+            Icon = "◇",
+            Expanded = true,
+            Children = new[]
+            {
+                new TreeViewItem
+                {
+                    Id = "src",
+                    Label = "src",
+                    Icon = "▾",
+                    Expanded = true,
+                    Children = new[]
+                    {
+                        new TreeViewItem
+                        {
+                            Id = "project-rcl",
+                            Label = "XLib.DockLayout",
+                            Icon = "C#",
+                            Expanded = true,
+                            Children = new[]
+                            {
+                                File("file-dock-layout", "DockLayout.razor", "/src/XLib.DockLayout/Components/DockLayout.razor", "@* DockLayout root component *@\n<DockLayout />"),
+                                File("file-controller", "DockLayoutController.cs", "/src/XLib.DockLayout/DockLayoutController.cs", "public sealed class DockLayoutController : IDockLayoutHandle\n{\n    // Serialized layout operations.\n}"),
+                                File("file-store", "DockLayoutStore.cs", "/src/XLib.DockLayout/State/DockLayoutStore.cs", "internal sealed class DockLayoutStore\n{\n    // C# authoritative layout state.\n}")
+                            }
+                        }
+                    }
+                },
+                new TreeViewItem
+                {
+                    Id = "samples",
+                    Label = "samples",
+                    Icon = "▾",
+                    Expanded = true,
+                    Children = new[]
+                    {
+                        new TreeViewItem
+                        {
+                            Id = "project-playground",
+                            Label = "DockLayout.Playground",
+                            Icon = "W",
+                            Expanded = true,
+                            Children = new[]
+                            {
+                                File("file-standalone", "StandaloneDrag.razor", "/samples/DockLayout.Playground/Pages/StandaloneDrag.razor", "@page \"/standalone\"\n@layout EmptyLayout\n\n<DockLayout />"),
+                                File("file-program", "Program.cs", "/samples/DockLayout.Playground/Program.cs", "builder.Services.AddXLibDockLayout();")
+                            }
+                        }
+                    }
+                },
+                new TreeViewItem
+                {
+                    Id = "tests",
+                    Label = "tests",
+                    Icon = "▾",
+                    Children = new[]
+                    {
+                        new TreeViewItem { Id = "tests-unit", Label = "XLib.DockLayout.Tests", Icon = "T" },
+                        new TreeViewItem { Id = "tests-e2e", Label = "DockLayout.Playground.E2E", Icon = "E" }
+                    }
+                },
+                File("file-readme", "README.md", "/README.md", "# XLib.DockLayout\n\nReusable Blazor WebAssembly docking layout component."),
+                new TreeViewItem { Id = "docs", Label = "docs", Icon = "▤" },
+                new TreeViewItem { Id = "assets", Label = "assets", Icon = "▧" }
+            }
+        }
+    };
+
+    private static TreeViewItem File(string id, string label, string path, string text) => new()
+    {
+        Id = id,
+        Label = label,
+        Icon = label.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ? "C#" : label.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ? "R" : "M",
+        OpenPath = path,
+        ContentId = "text-editor",
+        EditorText = text
+    };
+
+    private async Task OpenItemAsync(TreeViewItem item)
+    {
+        if (LayoutHandle is null || string.IsNullOrWhiteSpace(item.OpenPath) || string.IsNullOrWhiteSpace(item.ContentId)) return;
+        var snapshot = await LayoutHandle.GetSnapshotAsync();
+        var target = snapshot.EditorViews.FirstOrDefault(view => view.ActiveTabId is not null)
+            ?? snapshot.EditorViews.FirstOrDefault();
+        if (target is null) return;
+
+        await LayoutHandle.OpenTabAsync(new OpenEditorTabRequest
+        {
+            ViewId = target.Id,
+            ContentId = item.ContentId,
+            Title = item.Label,
+            Icon = item.Icon,
+            DedupParameter = item.OpenPath,
+            Parameters = new Dictionary<string, object?>
+            {
+                ["Path"] = item.OpenPath,
+                ["Text"] = item.EditorText ?? $"// {item.OpenPath}"
+            }
+        });
+    }
+}

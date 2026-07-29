@@ -1,0 +1,117 @@
+@if (Node is EditorLeafInfo leaf)
+{
+    var view = Views.FirstOrDefault(item => string.Equals(item.Id, leaf.ViewId, StringComparison.Ordinal));
+    if (view is not null)
+    {
+        <EditorViewHost View="view"
+                        ContentRegistry="ContentRegistry"
+                        OverflowMode="OverflowMode"
+                        EmptyEditorTemplate="EmptyEditorTemplate"
+                        OnActivateTab="OnActivateTab"
+                        OnCloseTab="OnCloseTab"
+                        OnPinTab="OnPinTab"
+                        OnTabContextAction="OnTabContextAction" />
+    }
+    else
+    {
+        <div class="xdl-content-error" role="alert">VIEW_NOT_FOUND: @leaf.ViewId</div>
+    }
+}
+else if (Node is EditorSplitInfo split)
+{
+    <div class="@SplitCssClass(split)"
+         data-xdl-editor-split="@split.Id"
+         data-xdl-orientation="@split.Orientation.ToString().ToLowerInvariant()"
+         style="--xdl-first-ratio:@RatioPercent(split.FirstRatio)">
+        <div class="xdl-editor-split-child xdl-editor-split-first">
+            <EditorNodeView Node="split.First"
+                            Views="Views"
+                            ContentRegistry="ContentRegistry"
+                            OverflowMode="OverflowMode"
+                            EmptyEditorTemplate="EmptyEditorTemplate"
+                            OnActivateTab="OnActivateTab"
+                            OnCloseTab="OnCloseTab"
+                            OnPinTab="OnPinTab"
+                            OnTabContextAction="OnTabContextAction"
+                            OnResizeSplit="OnResizeSplit"
+                            OnToggleSplitCollapse="OnToggleSplitCollapse"
+                            ShowSplitterCollapseButtons="ShowSplitterCollapseButtons"
+                            EnableSplitterCollapse="EnableSplitterCollapse" />
+        </div>
+        <DockSplitter SplitterId="@split.Id"
+                      Orientation="split.Orientation"
+                      Value="@(split.FirstRatio * 100d)"
+                      Minimum="5d"
+                      Maximum="95d"
+                      AriaLabel="@GetSplitAriaLabel(split.Id)"
+                      ValueChanged="value => ResizeAsync(split.Id, value)"
+                      OnCollapse="() => ToggleCollapseAsync(split.Id)"
+                      Collapsed="@(split.CollapsedSide != SplitCollapsedSide.None)"
+                      CollapseFirst="@(split.CollapsedSide == SplitCollapsedSide.First)"
+                      ShowCollapseButton="ShowSplitterCollapseButtons"
+                      CollapseEnabled="EnableSplitterCollapse" />
+        <div class="xdl-editor-split-child xdl-editor-split-second">
+            <EditorNodeView Node="split.Second"
+                            Views="Views"
+                            ContentRegistry="ContentRegistry"
+                            OverflowMode="OverflowMode"
+                            EmptyEditorTemplate="EmptyEditorTemplate"
+                            OnActivateTab="OnActivateTab"
+                            OnCloseTab="OnCloseTab"
+                            OnPinTab="OnPinTab"
+                            OnTabContextAction="OnTabContextAction"
+                            OnResizeSplit="OnResizeSplit"
+                            OnToggleSplitCollapse="OnToggleSplitCollapse"
+                            ShowSplitterCollapseButtons="ShowSplitterCollapseButtons"
+                            EnableSplitterCollapse="EnableSplitterCollapse" />
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Gets or sets the current immutable EditorArea tree node.</summary>
+    [Parameter, EditorRequired] public EditorNodeInfo Node { get; set; } = default!;
+    /// <summary>Gets or sets all EditorView snapshots referenced by tree leaves.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<EditorViewInfo> Views { get; set; } = Array.Empty<EditorViewInfo>();
+    /// <summary>Gets or sets the content registry.</summary>
+    [Parameter, EditorRequired] public IDockContentRegistry ContentRegistry { get; set; } = default!;
+    /// <summary>Gets or sets the tab overflow mode.</summary>
+    [Parameter] public TabOverflowMode OverflowMode { get; set; } = TabOverflowMode.Scroll;
+    /// <summary>Gets or sets the empty view template.</summary>
+    [Parameter] public RenderFragment<EditorViewInfo>? EmptyEditorTemplate { get; set; }
+    /// <summary>Gets or sets the tab activation callback.</summary>
+    [Parameter] public EventCallback<string> OnActivateTab { get; set; }
+    /// <summary>Gets or sets the tab close callback.</summary>
+    [Parameter] public EventCallback<string> OnCloseTab { get; set; }
+    /// <summary>Gets or sets the tab pin callback.</summary>
+    [Parameter] public EventCallback<string> OnPinTab { get; set; }
+    /// <summary>Gets or sets the tab context-menu callback.</summary>
+    [Parameter] public EventCallback<EditorTabContextActionRequest> OnTabContextAction { get; set; }
+    /// <summary>Gets or sets the split-resize callback.</summary>
+    [Parameter] public EventCallback<EditorSplitResizeRequest> OnResizeSplit { get; set; }
+    /// <summary>Gets or sets the split collapse/expand callback.</summary>
+    [Parameter] public EventCallback<SplitterCollapseRequest> OnToggleSplitCollapse { get; set; }
+    /// <summary>Gets or sets whether splitter collapse buttons are visible.</summary>
+    [Parameter] public bool ShowSplitterCollapseButtons { get; set; } = true;
+    /// <summary>Gets or sets whether splitter collapse behavior is enabled.</summary>
+    [Parameter] public bool EnableSplitterCollapse { get; set; } = true;
+
+    private static string SplitCssClass(EditorSplitInfo split) =>
+        $"xdl-editor-split xdl-editor-split-{split.Orientation.ToString().ToLowerInvariant()} xdl-collapse-{split.CollapsedSide.ToString().ToLowerInvariant()}";
+
+    private static string RatioPercent(double ratio) =>
+        $"{Math.Clamp(ratio, 0.05d, 0.95d) * 100d:0.####}%";
+
+    private static string GetSplitAriaLabel(string splitId) => $"Resize editor split {splitId}";
+
+    private Task ResizeAsync(string splitId, double percent) => OnResizeSplit.InvokeAsync(new EditorSplitResizeRequest
+    {
+        SplitId = splitId,
+        FirstRatio = Math.Clamp(percent / 100d, 0.05d, 0.95d)
+    });
+
+    private Task ToggleCollapseAsync(string splitId) => OnToggleSplitCollapse.InvokeAsync(new SplitterCollapseRequest
+    {
+        SplitterId = splitId
+    });
+}

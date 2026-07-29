@@ -1,0 +1,31 @@
+<div class="demo-treeview" role="tree" aria-label="@AriaLabel">
+    @foreach (var item in Items)
+    {
+        <TreeViewNode Item="item"
+                      Level="1"
+                      SelectedItemId="@SelectedItemId"
+                      OnSelected="SelectAsync"
+                      OnActivated="ActivateAsync" />
+    }
+</div>
+
+@code {
+    /// <summary>Gets or sets root tree items.</summary>
+    [Parameter] public IReadOnlyList<TreeViewItem> Items { get; set; } = Array.Empty<TreeViewItem>();
+    /// <summary>Gets or sets the selected item identifier.</summary>
+    [Parameter] public string? SelectedItemId { get; set; }
+    /// <summary>Gets or sets the selected item identifier changed callback.</summary>
+    [Parameter] public EventCallback<string?> SelectedItemIdChanged { get; set; }
+    /// <summary>Gets or sets the item activation callback, normally raised by double-click.</summary>
+    [Parameter] public EventCallback<TreeViewItem> OnItemActivated { get; set; }
+    /// <summary>Gets or sets the accessible tree label.</summary>
+    [Parameter] public string AriaLabel { get; set; } = "Tree view";
+
+    private async Task SelectAsync(TreeViewItem item)
+    {
+        SelectedItemId = item.Id;
+        await SelectedItemIdChanged.InvokeAsync(item.Id);
+    }
+
+    private Task ActivateAsync(TreeViewItem item) => OnItemActivated.InvokeAsync(item);
+}

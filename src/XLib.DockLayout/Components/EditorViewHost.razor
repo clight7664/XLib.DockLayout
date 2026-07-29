@@ -1,0 +1,67 @@
+<section class="xdl-editor-view" data-xdl-editor-view="@View.Id" aria-label="Editor view @View.Id">
+    <EditorTabStrip View="View"
+                    OverflowMode="OverflowMode"
+                    OnActivate="OnActivateTab"
+                    OnClose="OnCloseTab"
+                    OnPin="OnPinTab"
+                    OnContextAction="OnTabContextAction" />
+    <div id="@ContentPanelId"
+         class="xdl-editor-content"
+         role="tabpanel"
+         aria-label="@ActiveTab?.Title"
+         aria-labelledby="@ActiveTabElementId"
+         tabindex="0">
+        @if (ActiveTab is null)
+        {
+            @RenderEmpty()
+        }
+        else if (ContentRegistry.TryResolve(ActiveTab.ContentId, out var componentType))
+        {
+            <DockContentErrorBoundary>
+                <DynamicComponent Type="@componentType" Parameters="@ActiveParameters" />
+            </DockContentErrorBoundary>
+        }
+        else
+        {
+            <div class="xdl-content-error" role="alert">CONTENT_NOT_REGISTERED: @ActiveTab.ContentId</div>
+        }
+    </div>
+</section>
+
+@code {
+    /// <summary>Gets or sets the EditorView snapshot.</summary>
+    [Parameter, EditorRequired] public EditorViewInfo View { get; set; } = default!;
+    /// <summary>Gets or sets the content registry.</summary>
+    [Parameter, EditorRequired] public IDockContentRegistry ContentRegistry { get; set; } = default!;
+    /// <summary>Gets or sets the overflow mode.</summary>
+    [Parameter] public TabOverflowMode OverflowMode { get; set; }
+    /// <summary>Gets or sets the empty view template.</summary>
+    [Parameter] public RenderFragment<EditorViewInfo>? EmptyEditorTemplate { get; set; }
+    /// <summary>Gets or sets the activation callback.</summary>
+    [Parameter] public EventCallback<string> OnActivateTab { get; set; }
+    /// <summary>Gets or sets the close callback.</summary>
+    [Parameter] public EventCallback<string> OnCloseTab { get; set; }
+    /// <summary>Gets or sets the pin callback.</summary>
+    [Parameter] public EventCallback<string> OnPinTab { get; set; }
+    /// <summary>Gets or sets the tab context-menu callback.</summary>
+    [Parameter] public EventCallback<EditorTabContextActionRequest> OnTabContextAction { get; set; }
+
+    private EditorTabInfo? ActiveTab => View.Tabs.FirstOrDefault(tab => tab.Id == View.ActiveTabId) ?? View.Tabs.FirstOrDefault();
+    private string ContentPanelId => $"xdl-tabpanel-{SanitizeId(View.Id)}";
+    private string? ActiveTabElementId => ActiveTab is null ? null : $"xdl-tab-{SanitizeId(ActiveTab.Id)}";
+    private IDictionary<string, object> ActiveParameters => ActiveTab?.Parameters.ToDictionary(pair => pair.Key, pair => pair.Value!) ?? new Dictionary<string, object>();
+    private static string SanitizeId(string value) => string.Concat(value.Select(character =>
+        char.IsLetterOrDigit(character) || character is '-' or '_' ? character : '-'));
+
+    private RenderFragment RenderEmpty() => builder =>
+    {
+        if (EmptyEditorTemplate is not null) builder.AddContent(0, EmptyEditorTemplate(View));
+        else
+        {
+            builder.OpenElement(1, "div");
+            builder.AddAttribute(2, "class", "xdl-empty-state");
+            builder.AddContent(3, $"EditorView {View.Id} is empty.");
+            builder.CloseElement();
+        }
+    };
+}

@@ -1,0 +1,184 @@
+@page "/"
+@implements IAsyncDisposable
+
+<PageTitle>XLib.DockLayout Playground</PageTitle>
+
+<section class="playground-page playground-workbench-page">
+    <div class="playground-heading">
+        <div>
+            <h1>IDE Workbench</h1>
+            <p>Standalone Blazor WebAssembly consumer using a ProjectReference to XLib.DockLayout.</p>
+        </div>
+        <div class="playground-actions" role="group" aria-label="DockLayout API actions">
+            <button data-testid="open-tab" @onclick="OpenTabAsync" disabled="@(_handle is null)">Open Tab</button>
+            <button data-testid="split-view" @onclick="SplitViewAsync" disabled="@(_handle is null)">Split View</button>
+            <button data-testid="move-panel" @onclick="MoveExplorerAsync" disabled="@(_handle is null)">Move Explorer</button>
+            <button data-testid="export-layout" @onclick="ExportAsync" disabled="@(_handle is null)">Export XML</button>
+            <button data-testid="import-layout" @onclick="ImportAsync" disabled="@(_handle is null)">Import XML</button>
+            <button data-testid="save-preset" @onclick="SavePresetAsync" disabled="@(_handle is null)">Save Preset</button>
+            <button data-testid="restore-preset" @onclick="RestorePresetAsync" disabled="@(_handle is null)">Restore Preset</button>
+        </div>
+    </div>
+
+    <div class="playground-workbench">
+        <DockLayout Definition="Definition"
+                    Options="Options"
+                    OnReady="HandleReadyAsync"
+                    OnLayoutChanged="HandleLayoutChangedAsync"
+                    OnTabOpened="HandleTabOpenedAsync"
+                    OnTabActivated="HandleTabActivatedAsync"
+                    OnTabClosed="HandleTabClosedAsync"
+                    OnLayoutRestored="HandleRestoredAsync">
+            <TopToolbarTemplate>
+                <strong>XLib IDE</strong><span class="playground-spacer"></span><span>main</span><span>Release</span>
+            </TopToolbarTemplate>
+            <StatusBarTemplate>
+                <span>Ready</span><span class="playground-spacer"></span><span>Instance: @_instanceId</span><span>Revision: @_snapshot?.Revision</span>
+            </StatusBarTemplate>
+            <EmptyPanelTemplate Context="panel"><div class="playground-empty">@panel.Title has no content.</div></EmptyPanelTemplate>
+            <EmptyEditorTemplate Context="view"><div class="playground-empty">Drop an EditorTab into @view.Id.</div></EmptyEditorTemplate>
+        </DockLayout>
+    </div>
+
+    <div class="playground-inspector-grid">
+        <section>
+            <h2>XML Export / Import</h2>
+            <textarea data-testid="layout-xml" @bind="_xml" spellcheck="false"></textarea>
+            @if (!string.IsNullOrWhiteSpace(_lastResult)) { <p class="playground-result">@_lastResult</p> }
+        </section>
+        <section>
+            <h2>Event Log</h2>
+            <ol class="playground-log" data-testid="event-log">
+                @foreach (var entry in _events.TakeLast(30).Reverse()) { <li>@entry</li> }
+            </ol>
+        </section>
+        <section>
+            <h2>Snapshot / Diagnostics</h2>
+            <pre data-testid="snapshot">@SnapshotText</pre>
+        </section>
+    </div>
+</section>
+
+@code {
+    private IDockLayoutHandle? _handle;
+    private DockLayoutSnapshot? _snapshot;
+    private readonly List<string> _events = new();
+    private string _xml = string.Empty;
+    private string _lastResult = string.Empty;
+    private string _instanceId = "pending";
+    private int _newTabIndex = 1;
+
+    private static DockLayoutOptions Options { get; } = new()
+    {
+        AutoSave = true,
+        AutoRestore = false,
+        PersistenceKey = "xlibDockLayout.playground.main",
+        TabOverflowMode = TabOverflowMode.Scroll,
+        TabDedupMode = TabDedupMode.ActivateExisting
+    };
+
+    private static DockLayoutDefinition Definition { get; } = new()
+    {
+        Panels = new DockPanelDefinition[]
+        {
+            new() { Id = "explorer", Region = DockRegionName.LeftDockUpper, ContentId = "explorer", Title = "Explorer", Icon = "▱", InitialRatio = .55 },
+            new() { Id = "search", Region = DockRegionName.LeftDockLower, ContentId = "search", Title = "Search", Icon = "⌕", InitialRatio = .45 },
+            new() { Id = "outline", Region = DockRegionName.RightDockUpper, ContentId = "outline", Title = "Outline", Icon = "☷" },
+            new() { Id = "properties", Region = DockRegionName.RightDockLower, ContentId = "properties", Title = "Properties", Icon = "⚙" },
+            new() { Id = "terminal", Region = DockRegionName.BottomLeftDock, ContentId = "terminal", Title = "Terminal", Icon = ">_" },
+            new() { Id = "problems", Region = DockRegionName.BottomRightDock, ContentId = "problems", Title = "Problems", Icon = "!" },
+            new() { Id = "relations", Region = DockRegionName.BottomRightDock, ContentId = "relations", Title = "Relations", Icon = "▦" }
+        },
+        EditorViews = new EditorViewDefinition[]
+        {
+            new()
+            {
+                Id = "view-main",
+                Lifecycle = EditorViewLifecycle.Template,
+                ActiveTabId = "tab-readme",
+                Tabs = new EditorTabDefinition[]
+                {
+                    new() { Id = "tab-welcome", ContentId = "welcome", Title = "Welcome", Icon = "◆", Closable = false, Pinned = true },
+                    new() { Id = "tab-readme", ContentId = "text-editor", Title = "README.md", Icon = "M", DedupParameter = "/README.md", Parameters = new Dictionary<string, object?> { ["Path"] = "/README.md", ["Text"] = "# XLib.DockLayout\n\nA standalone WASM integration sample." } },
+                    new() { Id = "tab-api", ContentId = "text-editor", Title = "DockLayoutController.cs", Icon = "C#", DedupParameter = "/src/DockLayoutController.cs", Parameters = new Dictionary<string, object?> { ["Path"] = "/src/XLib.DockLayout/DockLayoutController.cs", ["Text"] = "public sealed class DockLayoutController : IDockLayoutHandle { }" } }
+                }
+            }
+        }
+    };
+
+    private string SnapshotText => _snapshot is null
+        ? "Waiting for OnReady..."
+        : $"Instance: {_snapshot.InstanceId}\nRevision: {_snapshot.Revision}\nPanels: {_snapshot.Panels.Count}\nViews: {_snapshot.EditorViews.Count}\nTabs: {_snapshot.EditorViews.Sum(view => view.Tabs.Count)}";
+
+    private async Task HandleReadyAsync(DockLayoutReadyEventArgs args)
+    {
+        _handle = args.Handle;
+        _instanceId = args.InstanceId;
+        _snapshot = await args.Handle.GetSnapshotAsync();
+        Log($"Ready {args.InstanceId}");
+    }
+
+    private Task HandleLayoutChangedAsync(DockLayoutChangedEventArgs args)
+    {
+        _snapshot = args.Snapshot;
+        Log($"LayoutChanged r{args.Revision} {args.ObjectId}");
+        return Task.CompletedTask;
+    }
+    private Task HandleTabOpenedAsync(DockTabEventArgs args) { Log($"TabOpened {args.Tab.Id}"); return Task.CompletedTask; }
+    private Task HandleTabActivatedAsync(DockTabEventArgs args) { Log($"TabActivated {args.Tab.Id}"); return Task.CompletedTask; }
+    private Task HandleTabClosedAsync(DockTabEventArgs args) { Log($"TabClosed {args.Tab.Id}"); return Task.CompletedTask; }
+    private Task HandleRestoredAsync(DockLayoutRestoredEventArgs args) { Log($"LayoutRestored {args.Report.Version}"); return Task.CompletedTask; }
+
+    private async Task OpenTabAsync()
+    {
+        if (_handle is null) return;
+        var index = _newTabIndex++;
+        var result = await _handle.OpenTabAsync(new OpenEditorTabRequest
+        {
+            ViewId = "view-main", ContentId = "text-editor", Title = $"Generated-{index}.cs",
+            DedupParameter = $"/generated/{index}.cs",
+            Parameters = new Dictionary<string, object?> { ["Path"] = $"/generated/{index}.cs", ["Text"] = $"// generated tab {index}" }
+        });
+        Show(result.Success, result.Error?.Message ?? result.Value?.Id ?? "Opened");
+    }
+
+    private async Task SplitViewAsync()
+    {
+        if (_handle is null) return;
+        var result = await _handle.SplitEditorViewAsync("view-main", SplitOrientation.Vertical);
+        Show(result.Success, result.Error?.Message ?? result.Value ?? "Split");
+    }
+
+    private async Task MoveExplorerAsync()
+    {
+        if (_handle is null) return;
+        var current = _snapshot?.Panels.FirstOrDefault(panel => panel.Id == "explorer")?.Region;
+        var target = current == DockRegionName.RightDockUpper ? DockRegionName.LeftDockUpper : DockRegionName.RightDockUpper;
+        var result = await _handle.MovePanelAsync("explorer", target, 0);
+        Show(result.Success, result.Error?.Message ?? $"Explorer moved to {target}");
+    }
+
+    private async Task ExportAsync()
+    {
+        if (_handle is null) return;
+        var result = await _handle.ExportLayoutXmlAsync();
+        if (result.Success) _xml = result.Value ?? string.Empty;
+        Show(result.Success, result.Error?.Message ?? $"Exported {_xml.Length} characters");
+    }
+
+    private async Task ImportAsync()
+    {
+        if (_handle is null) return;
+        var result = await _handle.ImportLayoutXmlAsync(_xml);
+        Show(result.Success, result.Error?.Message ?? $"Imported {result.Value?.TabCount} tabs");
+    }
+    private async Task SavePresetAsync() { if (_handle is not null) { var r = await _handle.SavePresetAsync("default"); Show(r.Success, r.Error?.Message ?? "Preset saved"); } }
+    private async Task RestorePresetAsync() { if (_handle is not null) { var r = await _handle.RestorePresetAsync("default"); Show(r.Success, r.Error?.Message ?? "Preset restored"); } }
+    private void Show(bool success, string message) { _lastResult = $"{(success ? "OK" : "ERROR")}: {message}"; Log(_lastResult); }
+    private void Log(string message) { _events.Add($"{DateTimeOffset.Now:HH:mm:ss.fff} {message}"); StateHasChanged(); }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_handle is not null) await _handle.DisposeAsync();
+    }
+}

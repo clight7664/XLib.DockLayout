@@ -1,0 +1,143 @@
+name: ci
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  NUGET_XMLDOC_MODE: skip
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.302
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            **/*.csproj
+            **/packages.lock.json
+
+      - name: Static source verification
+        shell: bash
+        run: |
+          if [[ -d docs ]]; then
+            python3 scripts/static-verify.py
+          else
+            echo "::notice::Static verification is temporarily skipped because the docs baseline is withheld."
+          fi
+
+      - name: JavaScript syntax verification
+        run: node --check src/XLib.DockLayout/wwwroot/js/xlib-dock-layout.js
+
+      - name: Restore
+        run: dotnet restore XLib.DockLayout.sln
+
+      - name: Verify locked restore
+        run: dotnet restore XLib.DockLayout.sln --locked-mode
+
+      - name: Verify formatting
+        run: dotnet format XLib.DockLayout.sln --verify-no-changes --no-restore
+
+      - name: Build Release
+        run: dotnet build XLib.DockLayout.sln -c Release --no-restore
+
+      - name: Test xUnit and bUnit
+        run: >-
+          dotnet test tests/XLib.DockLayout.Tests/XLib.DockLayout.Tests.csproj
+          -c Release --no-build
+          --logger "trx;LogFileName=xlib-docklayout-tests.trx"
+          --results-directory artifacts/test-results
+          --collect:"XPlat Code Coverage"
+
+      - name: Publish Playground
+        run: >-
+          dotnet publish samples/DockLayout.Playground/DockLayout.Playground.csproj
+          -c Release --no-restore
+          -o artifacts/playground
+
+      - name: Pack NuGet
+        run: >-
+          dotnet pack src/XLib.DockLayout/XLib.DockLayout.csproj
+          -c Release --no-build
+          -o artifacts/packages
+
+      - name: Upload verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xlib-docklayout-verification
+          if-no-files-found: warn
+          path: |
+            artifacts/test-results
+            artifacts/packages
+            artifacts/playground/wwwroot
+
+  e2e:
+    name: e2e-chromium
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.302
+
+      - name: Restore and build
+        run: |
+          dotnet restore XLib.DockLayout.sln
+          dotnet build XLib.DockLayout.sln -c Release --no-restore
+
+      - name: Install Playwright Chromium
+        run: pwsh tests/DockLayout.Playground.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Start Playground
+        run: |
+          ASPNETCORE_URLS=http://127.0.0.1:5080 dotnet run --project samples/DockLayout.Playground/DockLayout.Playground.csproj -c Release --no-build > artifacts/playground-server.log 2>&1 &
+          echo $! > artifacts/playground-server.pid
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:5080/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat artifacts/playground-server.log
+          exit 1
+
+      - name: Run Playwright tests
+        env:
+          PLAYGROUND_URL: http://127.0.0.1:5080/
+        run: >-
+          dotnet test tests/DockLayout.Playground.E2E/DockLayout.Playground.E2E.csproj
+          -c Release --no-build
+          --logger "trx;LogFileName=docklayout-playwright.trx"
+          --results-directory artifacts/e2e-results
+
+      - name: Upload E2E logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xlib-docklayout-e2e
+          if-no-files-found: warn
+          path: |
+            artifacts/e2e-results
+            artifacts/playground-server.log

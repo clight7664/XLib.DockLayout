@@ -1,0 +1,207 @@
+<article class="xdl-panel @(Panel.AutoHide ? "xdl-panel-auto-hide" : string.Empty)"
+         id="xdl-panel-@Panel.Id"
+         data-xdl-panel="@Panel.Id"
+         aria-label="@Panel.Title"
+         @onkeydown="HandleKeyDownAsync">
+    <header class="xdl-panel-header" data-xdl-panel-header="@Panel.Id">
+        <button type="button"
+                class="xdl-panel-title"
+                @onclick="() => OnActivate.InvokeAsync(Panel.Id)"
+                aria-label="Activate @Panel.Title">
+            @if (!string.IsNullOrWhiteSpace(Panel.Icon))
+            {
+                <span class="xdl-icon" aria-hidden="true">@Panel.Icon</span>
+            }
+            <span class="xdl-panel-title-text">@Panel.Title</span>
+        </button>
+
+        <div class="xdl-panel-actions">
+            <button type="button"
+                    class="xdl-icon-button xdl-panel-move-trigger"
+                    aria-label="Move @Panel.Title to another region"
+                    aria-haspopup="menu"
+                    aria-expanded="@_moveMenuOpen"
+                    title="Move to region"
+                    data-xdl-no-drag
+                    @onpointerdown:stopPropagation="true"
+                    @onclick:stopPropagation="true"
+                    @onclick="ToggleMoveMenu">
+                ↗
+            </button>
+            <button type="button"
+                    class="xdl-icon-button"
+                    data-xdl-no-drag
+                    @onpointerdown:stopPropagation="true"
+                    @onclick:stopPropagation="true"
+                    @onclick="() => OnAutoHide.InvokeAsync(Panel.Id)"
+                    aria-label="@AutoHideAriaLabel"
+                    title="@AutoHideTitle">
+                @(Panel.AutoHide ? "●" : "○")
+            </button>
+            <button type="button"
+                    class="xdl-icon-button"
+                    data-xdl-no-drag
+                    @onpointerdown:stopPropagation="true"
+                    @onclick:stopPropagation="true"
+                    @onclick="() => OnCollapse.InvokeAsync(Panel.Id)"
+                    aria-label="Collapse @Panel.Title"
+                    title="Collapse panel">
+                ×
+            </button>
+        </div>
+
+        @if (_moveMenuOpen)
+        {
+            <div class="xdl-panel-move-menu" role="menu" aria-label="Move @Panel.Title to region">
+                @foreach (var region in RegionOptions)
+                {
+                    <button type="button"
+                            class="xdl-panel-move-option"
+                            role="menuitem"
+                            disabled="@(region == Panel.Region)"
+                            aria-current="@RegionAriaCurrent(region)"
+                            data-xdl-move-region="@region"
+                            data-xdl-no-drag
+                            @onpointerdown:stopPropagation="true"
+                            @onclick:stopPropagation="true"
+                            @onclick="() => MoveAsync(region)">
+                        <span class="xdl-panel-move-icon" aria-hidden="true">@RegionIcon(region)</span>
+                        <span>@RegionLabel(region)</span>
+                    </button>
+                }
+            </div>
+        }
+    </header>
+
+    <div class="xdl-panel-content" tabindex="0">
+        @if (string.IsNullOrWhiteSpace(Panel.ContentId))
+        {
+            @RenderEmpty()
+        }
+        else if (ContentRegistry.TryResolve(Panel.ContentId, out var componentType))
+        {
+            <DockContentErrorBoundary>
+                <DynamicComponent Type="@componentType" Parameters="@ComponentParameters" />
+            </DockContentErrorBoundary>
+        }
+        else
+        {
+            <div class="xdl-content-error" role="alert">CONTENT_NOT_REGISTERED: @Panel.ContentId</div>
+        }
+    </div>
+</article>
+
+@code {
+    private static readonly IReadOnlyList<DockRegionName> RegionOptions = new[]
+    {
+        DockRegionName.LeftDockUpper,
+        DockRegionName.LeftDockLower,
+        DockRegionName.RightDockUpper,
+        DockRegionName.RightDockLower,
+        DockRegionName.BottomLeftDock,
+        DockRegionName.BottomRightDock
+    };
+
+    private bool _moveMenuOpen;
+
+    /// <summary>Gets or sets the panel snapshot.</summary>
+    [Parameter, EditorRequired]
+    public DockPanelInfo Panel { get; set; } = default!;
+
+    /// <summary>Gets or sets the content registry.</summary>
+    [Parameter, EditorRequired]
+    public IDockContentRegistry ContentRegistry { get; set; } = default!;
+
+    /// <summary>Gets or sets the empty panel template.</summary>
+    [Parameter]
+    public RenderFragment<DockPanelInfo>? EmptyPanelTemplate { get; set; }
+
+    /// <summary>Gets or sets the activation callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnActivate { get; set; }
+
+    /// <summary>Gets or sets the collapse callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnCollapse { get; set; }
+
+    /// <summary>Gets or sets the auto-hide callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnAutoHide { get; set; }
+
+    /// <summary>Gets or sets the explicit region-move callback.</summary>
+    [Parameter]
+    public EventCallback<PanelDragCommit> OnMove { get; set; }
+
+    private IDictionary<string, object> ComponentParameters =>
+        Panel.Parameters.ToDictionary(pair => pair.Key, pair => pair.Value!);
+
+    private string AutoHideAriaLabel => $"{(Panel.AutoHide ? "Pin" : "Auto hide")} {Panel.Title}";
+    private string AutoHideTitle => Panel.AutoHide ? "Pin panel" : "Auto hide panel";
+
+    private void ToggleMoveMenu() => _moveMenuOpen = !_moveMenuOpen;
+
+    private async Task MoveAsync(DockRegionName targetRegion)
+    {
+        _moveMenuOpen = false;
+        if (targetRegion == Panel.Region)
+        {
+            return;
+        }
+
+        await OnMove.InvokeAsync(new PanelDragCommit
+        {
+            PanelId = Panel.Id,
+            TargetRegion = targetRegion,
+            TargetIndex = -1
+        });
+    }
+
+    private Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape" && _moveMenuOpen)
+        {
+            _moveMenuOpen = false;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static string RegionLabel(DockRegionName region) => region switch
+    {
+        DockRegionName.LeftDockUpper => "Left Top",
+        DockRegionName.LeftDockLower => "Left Bottom",
+        DockRegionName.RightDockUpper => "Right Top",
+        DockRegionName.RightDockLower => "Right Bottom",
+        DockRegionName.BottomLeftDock => "Bottom Left",
+        DockRegionName.BottomRightDock => "Bottom Right",
+        _ => region.ToString()
+    };
+
+    private string? RegionAriaCurrent(DockRegionName region) => region == Panel.Region ? "true" : null;
+
+    private static string RegionIcon(DockRegionName region) => region switch
+    {
+        DockRegionName.LeftDockUpper => "◰",
+        DockRegionName.LeftDockLower => "◱",
+        DockRegionName.RightDockUpper => "◳",
+        DockRegionName.RightDockLower => "◲",
+        DockRegionName.BottomLeftDock => "◿",
+        DockRegionName.BottomRightDock => "◺",
+        _ => "□"
+    };
+
+    private RenderFragment RenderEmpty() => builder =>
+    {
+        if (EmptyPanelTemplate is not null)
+        {
+            builder.AddContent(0, EmptyPanelTemplate(Panel));
+        }
+        else
+        {
+            builder.OpenElement(1, "div");
+            builder.AddAttribute(2, "class", "xdl-empty-state");
+            builder.AddContent(3, $"{Panel.Title} is empty.");
+            builder.CloseElement();
+        }
+    };
+}

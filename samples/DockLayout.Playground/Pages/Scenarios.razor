@@ -1,0 +1,14 @@
+@page "/scenarios"
+<PageTitle>DockLayout Scenarios</PageTitle>
+<h1>Scenarios</h1>
+<p>Two independent instances verify isolation. The first has only EditorArea content; the second has zero panels and a long tab title.</p>
+<div class="scenario-grid">
+    <section><h2>Instance A</h2><div class="scenario-host"><DockLayout Definition="EditorOnly" Options="@InstanceAOptions" /></div></section>
+    <section><h2>Instance B</h2><div class="scenario-host"><DockLayout Definition="LongTitle" Options="@InstanceBOptions" /></div></section>
+</div>
+@code {
+    private static DockLayoutOptions InstanceAOptions { get; } = new() { AutoSave = false };
+    private static DockLayoutOptions InstanceBOptions { get; } = new() { AutoSave = false, TabOverflowMode = TabOverflowMode.Wrap };
+    private static DockLayoutDefinition EditorOnly { get; } = new() { EditorViews = new[] { new EditorViewDefinition { Id = "a-main", Tabs = new[] { new EditorTabDefinition { Id = "a-welcome", ContentId = "welcome", Title = "Only EditorArea" } } } } };
+    private static DockLayoutDefinition LongTitle { get; } = new() { EditorViews = new[] { new EditorViewDefinition { Id = "b-main", Tabs = Enumerable.Range(1, 12).Select(i => new EditorTabDefinition { Id = $"b-{i}", ContentId = "text-editor", Title = $"Very-long-editor-tab-title-{i}-used-for-overflow-validation.cs", DedupParameter = i.ToString(), Parameters = new Dictionary<string, object?> { ["Path"] = $"/long/{i}.cs", ["Text"] = $"// {i}" } }).ToArray() } } };
+}

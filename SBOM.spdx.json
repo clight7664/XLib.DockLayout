@@ -1,0 +1,164 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "XLib.DockLayout-0.1.0",
+  "documentNamespace": "https://github.com/clight7664/XLib.DockLayout/sbom/0.1.0/20260729",
+  "creationInfo": {
+    "created": "2026-07-29T00:00:00Z",
+    "creators": [
+      "Tool: ChatGPT-GPT-5.6-Thinking"
+    ]
+  },
+  "packages": [
+    {
+      "name": "XLib.DockLayout",
+      "SPDXID": "SPDXRef-Package-XLib-DockLayout",
+      "versionInfo": "0.1.0",
+      "downloadLocation": "https://github.com/clight7664/XLib.DockLayout",
+      "filesAnalyzed": false,
+      "licenseConcluded": "LicenseRef-XLib-DockLayout-Source",
+      "licenseDeclared": "LicenseRef-XLib-DockLayout-Source"
+    },
+    {
+      "name": "Microsoft.AspNetCore.Components.Web",
+      "SPDXID": "SPDXRef-Package-Microsoft.AspNetCore.Components.Web",
+      "versionInfo": "10.0.10",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT"
+    },
+    {
+      "name": "Microsoft.AspNetCore.Components.WebAssembly",
+      "SPDXID": "SPDXRef-Package-Microsoft.AspNetCore.Components.WebAssembly",
+      "versionInfo": "10.0.10",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT"
+    },
+    {
+      "name": "Microsoft.AspNetCore.Components.WebAssembly.DevServer",
+      "SPDXID": "SPDXRef-Package-Microsoft.AspNetCore.Components.WebAssembly.DevServer",
+      "versionInfo": "10.0.10",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT"
+    },
+    {
+      "name": "Microsoft.NET.Test.Sdk",
+      "SPDXID": "SPDXRef-Package-Microsoft.NET.Test.Sdk",
+      "versionInfo": "18.8.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT"
+    },
+    {
+      "name": "xunit",
+      "SPDXID": "SPDXRef-Package-xunit",
+      "versionInfo": "2.9.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0"
+    },
+    {
+      "name": "xunit.runner.visualstudio",
+      "SPDXID": "SPDXRef-Package-xunit.runner.visualstudio",
+      "versionInfo": "3.1.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0"
+    },
+    {
+      "name": "bunit",
+      "SPDXID": "SPDXRef-Package-bunit",
+      "versionInfo": "2.7.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT"
+    },
+    {
+      "name": "coverlet.collector",
+      "SPDXID": "SPDXRef-Package-coverlet.collector",
+      "versionInfo": "10.0.1",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT"
+    },
+    {
+      "name": "Microsoft.Playwright",
+      "SPDXID": "SPDXRef-Package-Microsoft.Playwright",
+      "versionInfo": "1.61.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-XLib-DockLayout"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-XLib-DockLayout",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-Microsoft.AspNetCore.Components.Web"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-XLib-DockLayout",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-Microsoft.AspNetCore.Components.WebAssembly"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-XLib-DockLayout",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-Microsoft.AspNetCore.Components.WebAssembly.DevServer"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-XLib-DockLayout",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-Microsoft.NET.Test.Sdk"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-XLib-DockLayout",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-xunit"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-XLib-DockLayout",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-xunit.runner.visualstudio"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-XLib-DockLayout",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-bunit"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-XLib-DockLayout",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-coverlet.collector"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-XLib-DockLayout",
+      "relationshipType": "DEV_DEPENDENCY_OF",
+      "relatedSpdxElement": "SPDXRef-Package-Microsoft.Playwright"
+    }
+  ],
+  "hasExtractedLicensingInfos": [
+    {
+      "licenseId": "LicenseRef-XLib-DockLayout-Source",
+      "extractedText": "XLib.DockLayout Source License\n\nCopyright (c) 2026 clight7664. All rights reserved.\n\nThe source code and binary packages are provided for evaluation, internal use,\nand integration testing. Redistribution, sublicensing, resale, or publication\nof modified versions requires prior written permission from the copyright\nholder, unless a separate written license explicitly grants those rights.\n\nThird-party components remain subject to their respective licenses as listed\nin THIRD-PARTY-NOTICES.md and SBOM.spdx.json.",
+      "name": "XLib.DockLayout Source License"
+    }
+  ]
+}

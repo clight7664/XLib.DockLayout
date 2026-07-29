@@ -1,0 +1,44 @@
+<section class="xdl-editor-area" aria-label="Editor area" data-xdl-editor-area>
+    <EditorNodeView Node="Root"
+                    Views="Views"
+                    ContentRegistry="ContentRegistry"
+                    OverflowMode="OverflowMode"
+                    EmptyEditorTemplate="EmptyEditorTemplate"
+                    OnActivateTab="OnActivateTab"
+                    OnCloseTab="OnCloseTab"
+                    OnPinTab="OnPinTab"
+                    OnTabContextAction="OnTabContextAction"
+                    OnResizeSplit="OnResizeSplit"
+                    OnToggleSplitCollapse="OnToggleSplitCollapse"
+                    ShowSplitterCollapseButtons="ShowSplitterCollapseButtons"
+                    EnableSplitterCollapse="EnableSplitterCollapse" />
+</section>
+
+@code {
+    /// <summary>Gets or sets the immutable EditorArea binary split root.</summary>
+    [Parameter, EditorRequired] public EditorNodeInfo Root { get; set; } = default!;
+    /// <summary>Gets or sets the EditorViews.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<EditorViewInfo> Views { get; set; } = Array.Empty<EditorViewInfo>();
+    /// <summary>Gets or sets the content registry.</summary>
+    [Parameter, EditorRequired] public IDockContentRegistry ContentRegistry { get; set; } = default!;
+    /// <summary>Gets or sets the tab overflow mode.</summary>
+    [Parameter] public TabOverflowMode OverflowMode { get; set; } = TabOverflowMode.Scroll;
+    /// <summary>Gets or sets the empty view template.</summary>
+    [Parameter] public RenderFragment<EditorViewInfo>? EmptyEditorTemplate { get; set; }
+    /// <summary>Gets or sets the tab activation callback.</summary>
+    [Parameter] public EventCallback<string> OnActivateTab { get; set; }
+    /// <summary>Gets or sets the tab close callback.</summary>
+    [Parameter] public EventCallback<string> OnCloseTab { get; set; }
+    /// <summary>Gets or sets the pin callback.</summary>
+    [Parameter] public EventCallback<string> OnPinTab { get; set; }
+    /// <summary>Gets or sets the tab context-menu callback.</summary>
+    [Parameter] public EventCallback<EditorTabContextActionRequest> OnTabContextAction { get; set; }
+    /// <summary>Gets or sets the split-resize callback.</summary>
+    [Parameter] public EventCallback<EditorSplitResizeRequest> OnResizeSplit { get; set; }
+    /// <summary>Gets or sets the split collapse/expand callback.</summary>
+    [Parameter] public EventCallback<SplitterCollapseRequest> OnToggleSplitCollapse { get; set; }
+    /// <summary>Gets or sets whether splitter collapse buttons are visible.</summary>
+    [Parameter] public bool ShowSplitterCollapseButtons { get; set; } = true;
+    /// <summary>Gets or sets whether splitter collapse behavior is enabled.</summary>
+    [Parameter] public bool EnableSplitterCollapse { get; set; } = true;
+}

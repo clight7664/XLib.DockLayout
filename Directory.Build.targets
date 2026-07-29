@@ -1,0 +1,8 @@
+<Project>
+  <Target Name="RejectForbiddenRuntimeDependencies" BeforeTargets="ResolveReferences">
+    <ItemGroup>
+      <_ForbiddenPackage Include="@(PackageReference)" Condition="$([System.String]::Copy('%(Identity)').ToLowerInvariant().Contains('dock')) Or $([System.String]::Copy('%(Identity)').ToLowerInvariant().Contains('dragdrop'))" />
+    </ItemGroup>
+    <Error Condition="'@(_ForbiddenPackage)' != ''" Text="Forbidden runtime docking/drag-drop dependency: @(_ForbiddenPackage)" />
+  </Target>
+</Project>

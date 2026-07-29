@@ -1,0 +1,91 @@
+<div class="@CssClass"
+     role="separator"
+     data-xdl-splitter="@SplitterId"
+     data-xdl-orientation="@Orientation.ToString().ToLowerInvariant()"
+     aria-label="@AriaLabel"
+     aria-orientation="@AriaOrientation"
+     aria-valuemin="@Minimum"
+     aria-valuemax="@Maximum"
+     aria-valuenow="@Value"
+     aria-expanded="@AriaExpanded"
+     tabindex="@(Locked ? -1 : 0)"
+     @ondblclick="ResetAsync"
+     @onkeydown="HandleKeyDownAsync">
+    @if (ShowCollapseButton && CollapseEnabled)
+    {
+        <button type="button"
+                class="xdl-splitter-collapse"
+                data-xdl-no-drag
+                tabindex="-1"
+                aria-label="@CollapseAriaLabel"
+                title="@CollapseAriaLabel"
+                @onpointerdown:stopPropagation="true"
+                @onclick:stopPropagation="true"
+                @onclick="ToggleCollapseAsync">@CollapseGlyph</button>
+    }
+</div>
+
+@code {
+    /// <summary>Gets or sets a stable splitter identifier used by browser interop.</summary>
+    [Parameter] public string SplitterId { get; set; } = string.Empty;
+    /// <summary>Gets or sets splitter orientation.</summary>
+    [Parameter] public SplitOrientation Orientation { get; set; }
+    /// <summary>Gets or sets the current percentage value.</summary>
+    [Parameter] public double Value { get; set; } = 50d;
+    /// <summary>Gets or sets the minimum percentage value.</summary>
+    [Parameter] public double Minimum { get; set; }
+    /// <summary>Gets or sets the maximum percentage value.</summary>
+    [Parameter] public double Maximum { get; set; } = 100d;
+    /// <summary>Gets or sets whether pointer and keyboard interaction are locked.</summary>
+    [Parameter] public bool Locked { get; set; }
+    /// <summary>Gets or sets an accessible label.</summary>
+    [Parameter] public string AriaLabel { get; set; } = "Resize layout";
+    /// <summary>Gets or sets the value changed callback.</summary>
+    [Parameter] public EventCallback<double> ValueChanged { get; set; }
+    /// <summary>Gets or sets the collapse/expand callback.</summary>
+    [Parameter] public EventCallback OnCollapse { get; set; }
+    /// <summary>Gets or sets whether the collapse button is rendered.</summary>
+    [Parameter] public bool ShowCollapseButton { get; set; } = true;
+    /// <summary>Gets or sets whether collapse behavior is enabled.</summary>
+    [Parameter] public bool CollapseEnabled { get; set; } = true;
+    /// <summary>Gets or sets whether the controlled adjacent area is collapsed.</summary>
+    [Parameter] public bool Collapsed { get; set; }
+    /// <summary>Gets or sets whether the first adjacent area is controlled; otherwise the second area is controlled.</summary>
+    [Parameter] public bool CollapseFirst { get; set; }
+
+    private string CssClass => $"xdl-splitter xdl-splitter-{Orientation.ToString().ToLowerInvariant()} {(Locked ? "xdl-locked" : string.Empty)} {(Collapsed ? "xdl-collapsed" : string.Empty)}";
+    private string AriaOrientation => Orientation == SplitOrientation.Vertical ? "vertical" : "horizontal";
+    private string? AriaExpanded => ShowCollapseButton && CollapseEnabled ? (!Collapsed).ToString().ToLowerInvariant() : null;
+    private string CollapseAriaLabel => $"{(Collapsed ? "Expand" : "Collapse")} adjacent region";
+    private string CollapseGlyph => Orientation switch
+    {
+        SplitOrientation.Vertical when CollapseFirst => Collapsed ? "›" : "‹",
+        SplitOrientation.Vertical => Collapsed ? "‹" : "›",
+        SplitOrientation.Horizontal when CollapseFirst => Collapsed ? "⌄" : "⌃",
+        _ => Collapsed ? "⌃" : "⌄"
+    };
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (Locked) return;
+        if ((args.Key is "Enter" or " ") && ShowCollapseButton && CollapseEnabled)
+        {
+            await ToggleCollapseAsync();
+            return;
+        }
+
+        var step = args.ShiftKey ? 10d : 2d;
+        var decreasing = args.Key is "ArrowLeft" or "ArrowUp";
+        var increasing = args.Key is "ArrowRight" or "ArrowDown";
+        if (!decreasing && !increasing) return;
+        await ValueChanged.InvokeAsync(Math.Clamp(Value + (increasing ? step : -step), Minimum, Maximum));
+    }
+
+    private Task ResetAsync() => Locked
+        ? Task.CompletedTask
+        : ValueChanged.InvokeAsync(Math.Clamp(50d, Minimum, Maximum));
+
+    private Task ToggleCollapseAsync() => Locked || !CollapseEnabled
+        ? Task.CompletedTask
+        : OnCollapse.InvokeAsync();
+}

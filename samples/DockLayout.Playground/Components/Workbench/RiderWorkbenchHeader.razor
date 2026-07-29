@@ -1,0 +1,206 @@
+<div class="demo-rider-header" @onkeydown="HandleKeyDown">
+    <div class="demo-rider-header-main">
+        <img class="demo-rider-logo" src="icons/docklayout-icon.svg" alt="DockLayout IDE" title="DockLayout IDE" aria-hidden="true" />
+        <button type="button"
+                class="demo-rider-menu-toggle"
+                aria-label="@(_expanded ? "Collapse application menu" : "Expand application menu")"
+                aria-expanded="@_expanded"
+                @onclick="ToggleExpandedAsync">☰</button>
+        <nav class="demo-rider-breadcrumb" aria-label="Breadcrumb">
+            <span>XLib.DockLayout</span><span aria-hidden="true">›</span>
+            <span>samples</span><span aria-hidden="true">›</span>
+            <span>DockLayout.Playground</span><span aria-hidden="true">›</span>
+            <strong>StandaloneDrag.razor</strong>
+        </nav>
+        <span class="playground-spacer"></span>
+        <span class="demo-rider-branch">⌘ main</span>
+        <span>Release</span>
+    </div>
+
+    @if (_expanded)
+    {
+        @if (_activeMenu is not null)
+        {
+            <button type="button"
+                    class="demo-rider-menu-dismiss"
+                    aria-label="Close application menu"
+                    @onclick="CloseMenus"></button>
+        }
+        <nav class="demo-rider-menu-bar" aria-label="Application menu">
+            <div class="demo-rider-menu-slot">
+                <button type="button" class="@MenuButtonClass(MenuFile)" aria-haspopup="menu" aria-controls="@MenuPopupId(MenuFile)" aria-expanded="@IsMenuOpen(MenuFile)" @onclick="() => ToggleMenuAsync(MenuFile)">File</button>
+                @if (IsMenuOpen(MenuFile))
+                {
+                    <div id="@MenuPopupId(MenuFile)" class="demo-rider-popup" role="menu">
+                        <button type="button" role="menuitem" @onclick="OpenReadmeAndCloseAsync">Open README.md</button>
+                        <a role="menuitem" href="" @onclick="CloseMenus">Playground Home</a>
+                    </div>
+                }
+            </div>
+            <div class="demo-rider-menu-slot">
+                <button type="button" class="@MenuButtonClass(MenuEdit)" aria-haspopup="menu" aria-controls="@MenuPopupId(MenuEdit)" aria-expanded="@IsMenuOpen(MenuEdit)" @onclick="() => ToggleMenuAsync(MenuEdit)">Edit</button>
+                @if (IsMenuOpen(MenuEdit))
+                {
+                    <div id="@MenuPopupId(MenuEdit)" class="demo-rider-popup" role="menu">
+                        <button type="button" role="menuitem" disabled>Undo layout operation</button>
+                        <button type="button" role="menuitem" disabled>Redo layout operation</button>
+                    </div>
+                }
+            </div>
+            <div class="demo-rider-menu-slot">
+                <button type="button" class="@MenuButtonClass(MenuView)" aria-haspopup="menu" aria-controls="@MenuPopupId(MenuView)" aria-expanded="@IsMenuOpen(MenuView)" @onclick="() => ToggleMenuAsync(MenuView)">View</button>
+                @if (IsMenuOpen(MenuView))
+                {
+                    <div id="@MenuPopupId(MenuView)" class="demo-rider-popup demo-rider-popup-wide" role="menu">
+                        <div class="demo-rider-menu-heading">Tool Windows</div>
+                        @foreach (var panel in _panels.OrderBy(item => item.Region).ThenBy(item => item.Order))
+                        {
+                            <button type="button" role="menuitem" @onclick="() => ShowToolWindowAndCloseAsync(panel.Id)">
+                                <span>@(panel.ToolBarVisible ? "✓" : "○")</span>
+                                <span>@panel.Title</span>
+                                <small>@RegionLabel(panel.Region)@(panel.ToolBarVisible ? string.Empty : " · hidden")</small>
+                            </button>
+                        }
+                        <div class="xdl-menu-separator" role="separator"></div>
+                        <button type="button" role="menuitem" @onclick="RefreshAndKeepOpenAsync">Refresh tool-window list</button>
+                    </div>
+                }
+            </div>
+            @if (EnableThemeSwitching)
+            {
+                <div class="demo-rider-menu-slot">
+                    <button type="button" class="@MenuButtonClass(MenuAppearance)" aria-haspopup="menu" aria-controls="@MenuPopupId(MenuAppearance)" aria-expanded="@IsMenuOpen(MenuAppearance)" @onclick="() => ToggleMenuAsync(MenuAppearance)">Appearance</button>
+                    @if (IsMenuOpen(MenuAppearance))
+                    {
+                        <div id="@MenuPopupId(MenuAppearance)" class="demo-rider-popup" role="menu">
+                            <button type="button" role="menuitemradio" aria-checked="@(Theme == DockThemeMode.Dark)" @onclick="() => SelectThemeAndCloseAsync(DockThemeMode.Dark)">@(Theme == DockThemeMode.Dark ? "●" : "○") Dark</button>
+                            <button type="button" role="menuitemradio" aria-checked="@(Theme == DockThemeMode.Light)" @onclick="() => SelectThemeAndCloseAsync(DockThemeMode.Light)">@(Theme == DockThemeMode.Light ? "●" : "○") Light</button>
+                        </div>
+                    }
+                </div>
+            }
+            <div class="demo-rider-menu-slot">
+                <button type="button" class="@MenuButtonClass(MenuTools)" aria-haspopup="menu" aria-controls="@MenuPopupId(MenuTools)" aria-expanded="@IsMenuOpen(MenuTools)" @onclick="() => ToggleMenuAsync(MenuTools)">Tools</button>
+                @if (IsMenuOpen(MenuTools))
+                {
+                    <div id="@MenuPopupId(MenuTools)" class="demo-rider-popup" role="menu">
+                        <a role="menuitem" href="api-console" @onclick="CloseMenus">API Console</a>
+                        <a role="menuitem" href="diagnostics" @onclick="CloseMenus">Diagnostics</a>
+                        <a role="menuitem" href="persistence" @onclick="CloseMenus">Persistence</a>
+                        <a role="menuitem" href="accessibility" @onclick="CloseMenus">Accessibility</a>
+                    </div>
+                }
+            </div>
+        </nav>
+    }
+</div>
+
+@code {
+    private const string MenuFile = "file";
+    private const string MenuEdit = "edit";
+    private const string MenuView = "view";
+    private const string MenuAppearance = "appearance";
+    private const string MenuTools = "tools";
+
+    private bool _expanded;
+    private string? _activeMenu;
+    private IReadOnlyList<DockPanelInfo> _panels = Array.Empty<DockPanelInfo>();
+
+    [CascadingParameter(Name = "XLibDockLayoutHandle")]
+    private IDockLayoutHandle? LayoutHandle { get; set; }
+
+    /// <summary>Gets or sets the current explicit theme.</summary>
+    [Parameter] public DockThemeMode Theme { get; set; } = DockThemeMode.Dark;
+    /// <summary>Gets or sets whether the Appearance menu is available.</summary>
+    [Parameter] public bool EnableThemeSwitching { get; set; } = true;
+    /// <summary>Gets or sets the theme changed callback.</summary>
+    [Parameter] public EventCallback<DockThemeMode> OnThemeChanged { get; set; }
+
+    private async Task ToggleExpandedAsync()
+    {
+        _expanded = !_expanded;
+        _activeMenu = null;
+        if (_expanded) await RefreshAsync();
+    }
+
+    private async Task ToggleMenuAsync(string menu)
+    {
+        _activeMenu = string.Equals(_activeMenu, menu, StringComparison.Ordinal) ? null : menu;
+        if (string.Equals(_activeMenu, MenuView, StringComparison.Ordinal)) await RefreshAsync();
+    }
+
+    private bool IsMenuOpen(string menu) => string.Equals(_activeMenu, menu, StringComparison.Ordinal);
+    private static string MenuPopupId(string menu) => $"docklayout-menu-{menu}";
+    private string MenuButtonClass(string menu) => IsMenuOpen(menu) ? "demo-rider-menu-button demo-active" : "demo-rider-menu-button";
+    private void CloseMenus() => _activeMenu = null;
+
+    private void HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape") CloseMenus();
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (LayoutHandle is null) return;
+        _panels = (await LayoutHandle.GetSnapshotAsync()).Panels;
+    }
+
+    private async Task RefreshAndKeepOpenAsync()
+    {
+        await RefreshAsync();
+        _activeMenu = MenuView;
+    }
+
+    private async Task ShowToolWindowAndCloseAsync(string panelId)
+    {
+        if (LayoutHandle is null) return;
+        await LayoutHandle.SetToolBarEntryVisibilityAsync(panelId, true);
+        await LayoutHandle.ExpandPanelAsync(panelId);
+        await RefreshAsync();
+        CloseMenus();
+    }
+
+    private async Task OpenReadmeAndCloseAsync()
+    {
+        await OpenReadmeAsync();
+        CloseMenus();
+    }
+
+    private async Task OpenReadmeAsync()
+    {
+        if (LayoutHandle is null) return;
+        var snapshot = await LayoutHandle.GetSnapshotAsync();
+        var view = snapshot.EditorViews.FirstOrDefault(item => item.ActiveTabId is not null) ?? snapshot.EditorViews.FirstOrDefault();
+        if (view is null) return;
+        await LayoutHandle.OpenTabAsync(new OpenEditorTabRequest
+        {
+            ViewId = view.Id,
+            ContentId = "text-editor",
+            Title = "README.md",
+            Icon = "M",
+            DedupParameter = "/README.md",
+            Parameters = new Dictionary<string, object?>
+            {
+                ["Path"] = "/README.md",
+                ["Text"] = "# XLib.DockLayout\n\nOpened from the Rider-style File menu."
+            }
+        });
+    }
+
+    private async Task SelectThemeAndCloseAsync(DockThemeMode theme)
+    {
+        await OnThemeChanged.InvokeAsync(theme);
+        CloseMenus();
+    }
+
+    private static string RegionLabel(DockRegionName region) => region switch
+    {
+        DockRegionName.LeftDockUpper => "Left Top",
+        DockRegionName.LeftDockLower => "Left Bottom",
+        DockRegionName.RightDockUpper => "Right Top",
+        DockRegionName.RightDockLower => "Right Bottom",
+        DockRegionName.BottomLeftDock => "Bottom Left",
+        DockRegionName.BottomRightDock => "Bottom Right",
+        _ => region.ToString()
+    };
+}

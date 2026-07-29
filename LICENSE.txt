@@ -1,0 +1,11 @@
+XLib.DockLayout Source License
+
+Copyright (c) 2026 clight7664. All rights reserved.
+
+The source code and binary packages are provided for evaluation, internal use,
+and integration testing. Redistribution, sublicensing, resale, or publication
+of modified versions requires prior written permission from the copyright
+holder, unless a separate written license explicitly grants those rights.
+
+Third-party components remain subject to their respective licenses as listed
+in THIRD-PARTY-NOTICES.md and SBOM.spdx.json.

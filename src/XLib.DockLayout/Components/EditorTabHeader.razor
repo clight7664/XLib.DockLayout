@@ -1,0 +1,180 @@
+<div class="@CssClass"
+     id="@TabElementId"
+     role="tab"
+     aria-selected="@Tab.Active"
+     aria-controls="@ContentPanelId"
+     tabindex="@(Tab.Active ? 0 : -1)"
+     data-xdl-tab="@Tab.Id"
+     data-xdl-view="@Tab.ViewId"
+     title="@Tab.Title"
+     @onclick="ActivateAsync"
+     @oncontextmenu="OpenContextMenu"
+     @oncontextmenu:preventDefault="true"
+     @oncontextmenu:stopPropagation="true"
+     @onkeydown="HandleKeyDownAsync">
+    <span class="xdl-tab-activate" aria-hidden="true">
+        @if (!string.IsNullOrWhiteSpace(Tab.Icon))
+        {
+            <span class="xdl-icon" aria-hidden="true">@Tab.Icon</span>
+        }
+        <span class="xdl-tab-title">@Tab.Title</span>
+    </span>
+    <button type="button"
+            class="xdl-tab-pin"
+            data-xdl-no-drag
+            @onpointerdown:stopPropagation="true"
+            @onclick:stopPropagation="true"
+            @onclick="PinAsync"
+            aria-label="@(Tab.Pinned ? "Unpin" : "Pin") @Tab.Title">@(Tab.Pinned ? "●" : "○")</button>
+    @if (Tab.Closable)
+    {
+        <button type="button"
+                class="xdl-tab-close"
+                data-xdl-no-drag
+                @onpointerdown:stopPropagation="true"
+                @onclick:stopPropagation="true"
+                @onclick="CloseAsync"
+                aria-label="Close @Tab.Title">×</button>
+    }
+
+    @if (_contextMenuOpen)
+    {
+        <button type="button"
+                class="xdl-tab-context-dismiss"
+                aria-label="Close tab menu"
+                data-xdl-no-drag
+                @onpointerdown:stopPropagation="true"
+                @onclick:stopPropagation="true"
+                @onclick="CloseContextMenu"></button>
+        <div class="xdl-tab-context-menu"
+             style="@ContextMenuStyle"
+             role="menu"
+             aria-label="Actions for @Tab.Title"
+             data-xdl-no-drag
+             @onpointerdown:stopPropagation="true"
+             @onclick:stopPropagation="true">
+            <button type="button" role="menuitem" disabled="@(!Tab.Closable)" @onclick="() => ExecuteAsync(EditorTabContextAction.Close)">Close</button>
+            <button type="button" role="menuitem" @onclick="() => ExecuteAsync(EditorTabContextAction.CloseOthers)">Close Other Tabs</button>
+            <button type="button" role="menuitem" @onclick="() => ExecuteAsync(EditorTabContextAction.CloseAll)">Close All Tabs</button>
+            <button type="button" role="menuitem" @onclick="() => ExecuteAsync(EditorTabContextAction.CloseToLeft)">Close Tabs to the Left</button>
+            <button type="button" role="menuitem" @onclick="() => ExecuteAsync(EditorTabContextAction.CloseToRight)">Close Tabs to the Right</button>
+            <div class="xdl-menu-separator" role="separator"></div>
+            <button type="button" role="menuitem" @onclick="() => ExecuteAsync(EditorTabContextAction.SplitRight)">Split Right</button>
+            <button type="button" role="menuitem" @onclick="() => ExecuteAsync(EditorTabContextAction.SplitAndMoveRight)">Split and Move Right</button>
+            <button type="button" role="menuitem" @onclick="() => ExecuteAsync(EditorTabContextAction.SplitDown)">Split Down</button>
+            <button type="button" role="menuitem" @onclick="() => ExecuteAsync(EditorTabContextAction.SplitAndMoveDown)">Split and Move Down</button>
+        </div>
+    }
+</div>
+
+@code {
+    private bool _contextMenuOpen;
+    private double _contextMenuX;
+    private double _contextMenuY;
+
+    /// <summary>Gets or sets the EditorTab.</summary>
+    [Parameter, EditorRequired] public EditorTabInfo Tab { get; set; } = default!;
+    /// <summary>Gets or sets the identifier of the controlled tab panel.</summary>
+    [Parameter, EditorRequired] public string ContentPanelId { get; set; } = string.Empty;
+    /// <summary>Gets or sets the previous tab identifier used by keyboard navigation.</summary>
+    [Parameter] public string? PreviousTabId { get; set; }
+    /// <summary>Gets or sets the next tab identifier used by keyboard navigation.</summary>
+    [Parameter] public string? NextTabId { get; set; }
+    /// <summary>Gets or sets the first tab identifier used by keyboard navigation.</summary>
+    [Parameter] public string? FirstTabId { get; set; }
+    /// <summary>Gets or sets the last tab identifier used by keyboard navigation.</summary>
+    [Parameter] public string? LastTabId { get; set; }
+    /// <summary>Gets or sets the activation callback.</summary>
+    [Parameter] public EventCallback<string> OnActivate { get; set; }
+    /// <summary>Gets or sets the close callback.</summary>
+    [Parameter] public EventCallback<string> OnClose { get; set; }
+    /// <summary>Gets or sets the pin callback.</summary>
+    [Parameter] public EventCallback<string> OnPin { get; set; }
+    /// <summary>Gets or sets the context-menu action callback.</summary>
+    [Parameter] public EventCallback<EditorTabContextActionRequest> OnContextAction { get; set; }
+
+    private string CssClass => Tab.Active ? "xdl-tab xdl-active" : "xdl-tab";
+    private string TabElementId => $"xdl-tab-{SanitizeId(Tab.Id)}";
+    private string ContextMenuStyle => $"left:{Math.Max(4d, _contextMenuX):0.##}px;top:{Math.Max(4d, _contextMenuY):0.##}px";
+
+    private async Task ActivateAsync()
+    {
+        _contextMenuOpen = false;
+        await OnActivate.InvokeAsync(Tab.Id);
+    }
+
+    private async Task PinAsync()
+    {
+        _contextMenuOpen = false;
+        await OnPin.InvokeAsync(Tab.Id);
+    }
+
+    private async Task CloseAsync()
+    {
+        _contextMenuOpen = false;
+        await OnClose.InvokeAsync(Tab.Id);
+    }
+
+    private void OpenContextMenu(MouseEventArgs args)
+    {
+        _contextMenuX = args.ClientX;
+        _contextMenuY = args.ClientY;
+        _contextMenuOpen = true;
+    }
+
+    private void CloseContextMenu() => _contextMenuOpen = false;
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if ((args.ShiftKey && args.Key == "F10") || args.Key == "ContextMenu")
+        {
+            _contextMenuOpen = true;
+            return;
+        }
+
+        if (args.Key == "Escape")
+        {
+            _contextMenuOpen = false;
+            return;
+        }
+
+        var targetId = args.Key switch
+        {
+            "ArrowLeft" => PreviousTabId,
+            "ArrowRight" => NextTabId,
+            "Home" => FirstTabId,
+            "End" => LastTabId,
+            _ => null
+        };
+
+        if (!string.IsNullOrWhiteSpace(targetId))
+        {
+            _contextMenuOpen = false;
+            await OnActivate.InvokeAsync(targetId);
+            return;
+        }
+
+        if (args.Key is "Enter" or " ")
+        {
+            await ActivateAsync();
+        }
+        else if (args.Key == "Delete" && Tab.Closable)
+        {
+            await CloseAsync();
+        }
+    }
+
+    private async Task ExecuteAsync(EditorTabContextAction action)
+    {
+        _contextMenuOpen = false;
+        await OnContextAction.InvokeAsync(new EditorTabContextActionRequest
+        {
+            TabId = Tab.Id,
+            ViewId = Tab.ViewId,
+            Action = action
+        });
+    }
+
+    private static string SanitizeId(string value) => string.Concat(value.Select(character =>
+        char.IsLetterOrDigit(character) || character is '-' or '_' ? character : '-'));
+}

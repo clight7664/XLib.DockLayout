@@ -1,0 +1,61 @@
+<section class="@RegionCssClass"
+         data-xdl-region="@Region"
+         aria-label="@RegionLabel">
+    @if (ActivePanel is not null)
+    {
+        <DockPanelView Panel="ActivePanel"
+                       ContentRegistry="ContentRegistry"
+                       EmptyPanelTemplate="EmptyPanelTemplate"
+                       OnActivate="OnActivate"
+                       OnCollapse="OnCollapse"
+                       OnAutoHide="OnAutoHide"
+                       OnMove="OnMove" />
+    }
+    else
+    {
+        <div class="xdl-region-empty" data-testid="region-empty-@Region">No active panel in @RegionLabel</div>
+    }
+</section>
+
+@code {
+    /// <summary>Gets or sets the represented Dock Region.</summary>
+    [Parameter, EditorRequired]
+    public DockRegionName Region { get; set; }
+
+    /// <summary>Gets or sets panels assigned to the region.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<DockPanelInfo> Panels { get; set; } = Array.Empty<DockPanelInfo>();
+
+    /// <summary>Gets or sets the content registry.</summary>
+    [Parameter, EditorRequired]
+    public IDockContentRegistry ContentRegistry { get; set; } = default!;
+
+    /// <summary>Gets or sets the empty panel template.</summary>
+    [Parameter]
+    public RenderFragment<DockPanelInfo>? EmptyPanelTemplate { get; set; }
+
+    /// <summary>Gets or sets the activation callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnActivate { get; set; }
+
+    /// <summary>Gets or sets the collapse callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnCollapse { get; set; }
+
+    /// <summary>Gets or sets the auto-hide callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnAutoHide { get; set; }
+
+    /// <summary>Gets or sets the explicit region-move callback.</summary>
+    [Parameter]
+    public EventCallback<PanelDragCommit> OnMove { get; set; }
+
+    private DockPanelInfo? ActivePanel =>
+        Panels.FirstOrDefault(panel => panel.Active && panel.Visible && !panel.Collapsed && !panel.AutoHide);
+
+    private string RegionLabel => Region.ToString();
+
+    private string RegionCssClass => Panels.Count == 0
+        ? "xdl-region xdl-region-empty-slot"
+        : "xdl-region";
+}

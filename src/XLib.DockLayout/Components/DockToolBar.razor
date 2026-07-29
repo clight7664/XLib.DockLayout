@@ -1,0 +1,87 @@
+@if (Panels.Count > 0)
+{
+    <nav class="xdl-toolbar xdl-toolbar-@Side" role="toolbar" aria-label="@ToolbarAriaLabel">
+        @for (var groupIndex = 0; groupIndex < Groups.Count; groupIndex++)
+        {
+            var group = Groups[groupIndex];
+            <div class="xdl-toolbar-group" data-xdl-toolbar-region="@group.Key">
+                @foreach (var panel in group)
+                {
+                    <DockToolBarEntry Panel="panel"
+                                      Side="@Side"
+                                      OnToggle="OnToggle"
+                                      OnHide="OnHide"
+                                      OnHover="OnHover"
+                                      OnLeave="OnLeave" />
+                }
+            </div>
+            @if (groupIndex < Groups.Count - 1)
+            {
+                <div class="xdl-toolbar-divider" role="separator"></div>
+            }
+        }
+
+        <div class="xdl-toolbar-spacer"></div>
+
+        @if (HiddenPanels.Count > 0)
+        {
+            <details class="xdl-toolbar-hidden-menu">
+                <summary aria-label="Show hidden @Side panels" title="Show hidden panels">＋</summary>
+                <div class="@HiddenMenuCssClass" role="menu" aria-label="Hidden @Side panels">
+                    @foreach (var panel in HiddenPanels)
+                    {
+                        <button type="button" role="menuitem" @onclick="() => OnShow.InvokeAsync(panel.Id)">
+                            <span class="xdl-icon" aria-hidden="true">@(panel.Icon ?? "□")</span>
+                            <span>@panel.Title</span>
+                        </button>
+                    }
+                </div>
+            </details>
+        }
+    </nav>
+}
+
+@code {
+    /// <summary>Gets or sets the toolbar side.</summary>
+    [Parameter, EditorRequired]
+    public string Side { get; set; } = "left";
+
+    /// <summary>Gets or sets represented panels, including entries hidden from the toolbar.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<DockPanelInfo> Panels { get; set; } = Array.Empty<DockPanelInfo>();
+
+    /// <summary>Gets or sets the panel toggle callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnToggle { get; set; }
+
+    /// <summary>Gets or sets the panel hide callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnHide { get; set; }
+
+    /// <summary>Gets or sets the hidden panel restore callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnShow { get; set; }
+
+    /// <summary>Gets or sets the auto-hide hover callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnHover { get; set; }
+
+    /// <summary>Gets or sets the auto-hide leave callback.</summary>
+    [Parameter]
+    public EventCallback<string> OnLeave { get; set; }
+
+    private IReadOnlyList<DockPanelInfo> VisiblePanels =>
+        Panels.Where(panel => panel.ToolBarVisible).OrderBy(panel => panel.Region).ThenBy(panel => panel.Order).ToArray();
+
+    private IReadOnlyList<DockPanelInfo> HiddenPanels =>
+        Panels.Where(panel => !panel.ToolBarVisible).OrderBy(panel => panel.Region).ThenBy(panel => panel.Order).ToArray();
+
+    private IReadOnlyList<IGrouping<DockRegionName, DockPanelInfo>> Groups =>
+        VisiblePanels.GroupBy(panel => panel.Region).ToArray();
+
+    private string ToolbarAriaLabel => $"{Side} dock toolbar";
+
+    private string HiddenMenuCssClass => Side.Equals("right", StringComparison.OrdinalIgnoreCase)
+        ? "xdl-toolbar-hidden-items xdl-toolbar-hidden-items-right"
+        : "xdl-toolbar-hidden-items xdl-toolbar-hidden-items-left";
+}

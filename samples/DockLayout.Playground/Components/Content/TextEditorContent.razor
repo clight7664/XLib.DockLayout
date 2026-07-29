@@ -1,0 +1,12 @@
+<div class="demo-editor">
+    <div class="demo-editor-path">@Path</div>
+    <pre>@Text</pre>
+</div>
+
+@code {
+    [Parameter]
+    public string Path { get; set; } = "/untitled";
+
+    [Parameter]
+    public string Text { get; set; } = string.Empty;
+}

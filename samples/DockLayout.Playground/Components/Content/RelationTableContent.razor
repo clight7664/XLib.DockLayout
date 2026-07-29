@@ -1,0 +1,36 @@
+<RelationTable Columns="Columns"
+               Rows="Rows"
+               Caption="Project relationships"
+               AriaLabel="XLib.DockLayout project relationships" />
+
+@code {
+    private static IReadOnlyList<RelationTableColumn> Columns { get; } = new[]
+    {
+        new RelationTableColumn { Key = "source", Title = "Source", Width = "28%" },
+        new RelationTableColumn { Key = "relation", Title = "Relation", Width = "18%" },
+        new RelationTableColumn { Key = "target", Title = "Target", Width = "30%" },
+        new RelationTableColumn { Key = "kind", Title = "Kind", Width = "24%" }
+    };
+
+    private static IReadOnlyList<RelationTableRow> Rows { get; } = new[]
+    {
+        Row("r1", "DockLayout.Playground", "ProjectReference", "XLib.DockLayout", "Build dependency"),
+        Row("r2", "DockLayout", "owns", "DockLayoutStore", "Runtime composition"),
+        Row("r3", "DockLayoutController", "implements", "IDockLayoutHandle", "Public API"),
+        Row("r4", "EditorView", "contains", "EditorTab", "1:N relationship"),
+        Row("r5", "DockRegion", "hosts", "DockPanel", "1:N relationship"),
+        Row("r6", "DockPanel", "represented by", "ToolBarEntry", "1:1 relationship")
+    };
+
+    private static RelationTableRow Row(string id, string source, string relation, string target, string kind) => new()
+    {
+        Id = id,
+        Values = new Dictionary<string, object?>
+        {
+            ["source"] = source,
+            ["relation"] = relation,
+            ["target"] = target,
+            ["kind"] = kind
+        }
+    };
+}

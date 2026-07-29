@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:simpleType name="NonEmptyString">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1" />
+      <xs:maxLength value="4096" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="ParametersType" mixed="true" />
+
+  <xs:complexType name="TabType">
+    <xs:sequence>
+      <xs:element name="Parameters" type="ParametersType" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="id" type="NonEmptyString" use="required" />
+    <xs:attribute name="contentId" type="NonEmptyString" use="required" />
+    <xs:attribute name="title" type="NonEmptyString" use="required" />
+    <xs:attribute name="icon" type="xs:string" />
+    <xs:attribute name="closable" type="xs:boolean" default="true" />
+    <xs:attribute name="pinned" type="xs:boolean" default="false" />
+    <xs:attribute name="active" type="xs:boolean" default="false" />
+    <xs:attribute name="order" type="xs:int" default="0" />
+    <xs:attribute name="dedupParameter" type="xs:string" />
+  </xs:complexType>
+
+  <xs:complexType name="ViewType">
+    <xs:sequence>
+      <xs:element name="Tab" type="TabType" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="nodeId" type="NonEmptyString" use="required" />
+    <xs:attribute name="id" type="NonEmptyString" use="required" />
+    <xs:attribute name="lifecycle" type="xs:string" default="Template" />
+    <xs:attribute name="activeTabId" type="xs:string" />
+    <xs:attribute name="ratio" type="xs:double" default="1" />
+    <xs:attribute name="orientation" type="xs:string" default="Vertical" />
+    <xs:attribute name="order" type="xs:int" default="0" />
+  </xs:complexType>
+
+  <xs:complexType name="SplitType">
+    <xs:sequence>
+      <xs:choice minOccurs="2" maxOccurs="2">
+        <xs:element name="Split" type="SplitType" />
+        <xs:element name="View" type="ViewType" />
+      </xs:choice>
+    </xs:sequence>
+    <xs:attribute name="id" type="NonEmptyString" use="required" />
+    <xs:attribute name="orientation" type="xs:string" use="required" />
+    <xs:attribute name="firstRatio" type="xs:double" use="required" />
+    <xs:attribute name="collapsedSide" type="xs:string" default="None" />
+  </xs:complexType>
+
+  <xs:complexType name="PanelType">
+    <xs:sequence>
+      <xs:element name="Parameters" type="ParametersType" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="id" type="NonEmptyString" use="required" />
+    <xs:attribute name="contentId" type="xs:string" />
+    <xs:attribute name="title" type="NonEmptyString" use="required" />
+    <xs:attribute name="icon" type="xs:string" />
+    <xs:attribute name="lifecycle" type="xs:string" default="Template" />
+    <xs:attribute name="ratio" type="xs:double" default="1" />
+    <xs:attribute name="minSize" type="xs:double" default="120" />
+    <xs:attribute name="maxSize" type="xs:double" default="1200" />
+    <xs:attribute name="visible" type="xs:boolean" default="true" />
+    <xs:attribute name="toolBarVisible" type="xs:boolean" default="true" />
+    <xs:attribute name="collapsed" type="xs:boolean" default="false" />
+    <xs:attribute name="active" type="xs:boolean" default="false" />
+    <xs:attribute name="autoHide" type="xs:boolean" default="false" />
+    <xs:attribute name="order" type="xs:int" default="0" />
+  </xs:complexType>
+
+  <xs:element name="XLibDockLayout">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Regions" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Region" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Panel" type="PanelType" minOccurs="0" maxOccurs="unbounded" />
+                  </xs:sequence>
+                  <xs:attribute name="name" type="NonEmptyString" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Geometry" minOccurs="0">
+          <xs:complexType>
+            <xs:attribute name="leftDockRatio" type="xs:double" default="0.20" />
+            <xs:attribute name="rightDockRatio" type="xs:double" default="0.22" />
+            <xs:attribute name="bottomDockRatio" type="xs:double" default="0.26" />
+            <xs:attribute name="leftUpperRatio" type="xs:double" default="0.50" />
+            <xs:attribute name="rightUpperRatio" type="xs:double" default="0.50" />
+            <xs:attribute name="bottomLeftRatio" type="xs:double" default="0.50" />
+            <xs:attribute name="leftDockCollapsed" type="xs:boolean" default="false" />
+            <xs:attribute name="rightDockCollapsed" type="xs:boolean" default="false" />
+            <xs:attribute name="bottomDockCollapsed" type="xs:boolean" default="false" />
+            <xs:attribute name="leftLowerCollapsed" type="xs:boolean" default="false" />
+            <xs:attribute name="rightLowerCollapsed" type="xs:boolean" default="false" />
+            <xs:attribute name="bottomRightCollapsed" type="xs:boolean" default="false" />
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="EditorArea">
+          <xs:complexType>
+            <xs:choice>
+              <xs:element name="Split" type="SplitType" />
+              <xs:element name="View" type="ViewType" />
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" type="NonEmptyString" use="required" />
+      <xs:attribute name="instanceId" type="xs:string" />
+      <xs:attribute name="revision" type="xs:long" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
