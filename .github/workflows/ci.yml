@@ -115,6 +115,7 @@ jobs:
 
       - name: Start Playground
         run: |
+          mkdir -p artifacts
           ASPNETCORE_URLS=http://127.0.0.1:5080 dotnet run --project samples/DockLayout.Playground/DockLayout.Playground.csproj -c Release --no-build > artifacts/playground-server.log 2>&1 &
           echo $! > artifacts/playground-server.pid
           for attempt in $(seq 1 60); do
