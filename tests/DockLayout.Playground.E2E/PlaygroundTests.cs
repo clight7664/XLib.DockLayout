@@ -14,7 +14,8 @@ public sealed class PlaygroundTests : IAsyncLifetime
         _url = Environment.GetEnvironmentVariable("PLAYGROUND_URL");
         if (string.IsNullOrWhiteSpace(_url)) return;
         _playwright = await Playwright.CreateAsync();
-        _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = false });
+        var headed = string.Equals(Environment.GetEnvironmentVariable("PLAYWRIGHT_HEADED"), "1", StringComparison.Ordinal);
+        _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = !headed });
         _page = await _browser.NewPageAsync(new BrowserNewPageOptions { ViewportSize = new ViewportSize { Width = 1440, Height = 1000 } });
         await _page.GotoAsync(_url, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
     }
@@ -26,7 +27,7 @@ public sealed class PlaygroundTests : IAsyncLifetime
         await _page.GetByTestId("open-tab").ClickAsync();
         await Assertions.Expect(_page.Locator("[data-xdl-tab]")).ToHaveCountAsync(4);
         await _page.GetByTestId("export-layout").ClickAsync();
-        await Assertions.Expect(_page.GetByTestId("layout-xml")).ToContainTextAsync("XLibDockLayout");
+        await Assertions.Expect(_page.GetByTestId("layout-xml")).ToHaveValueAsync(new Regex("XLibDockLayout"));
         await _page.Locator("[data-xdl-tab]").Last.GetByLabel("Close Generated-1.cs").ClickAsync();
         await Assertions.Expect(_page.Locator("[data-xdl-tab]")).ToHaveCountAsync(3);
     }
