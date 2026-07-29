@@ -8,7 +8,9 @@ export DOTNET_NOLOGO=1
 
 dotnet --info | tee artifacts/logs/dotnet-info.log
 dotnet restore XLib.DockLayout.sln | tee artifacts/logs/restore.log
-dotnet restore XLib.DockLayout.sln --locked-mode | tee artifacts/logs/restore-locked.log
+dotnet restore src/XLib.DockLayout/XLib.DockLayout.csproj --locked-mode | tee artifacts/logs/restore-locked-runtime.log
+dotnet restore tests/XLib.DockLayout.Tests/XLib.DockLayout.Tests.csproj --locked-mode | tee artifacts/logs/restore-locked-tests.log
+dotnet restore tests/DockLayout.Playground.E2E/DockLayout.Playground.E2E.csproj --locked-mode | tee artifacts/logs/restore-locked-e2e.log
 dotnet format XLib.DockLayout.sln --verify-no-changes | tee artifacts/logs/format.log
 dotnet build XLib.DockLayout.sln -c Release --no-restore | tee artifacts/logs/build-release.log
 dotnet test XLib.DockLayout.sln -c Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory artifacts/test-results | tee artifacts/logs/test.log

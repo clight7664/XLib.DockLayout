@@ -8,7 +8,7 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestorePackagesWithLockFile Condition="'$(MSBuildProjectName)' != 'DockLayout.Playground'">true</RestorePackagesWithLockFile>
     <RestoreLockedMode Condition="'$(CI)' == 'true' and Exists('$(MSBuildProjectDirectory)/packages.lock.json')">true</RestoreLockedMode>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RepositoryUrl>https://github.com/clight7664/XLib.DockLayout</RepositoryUrl>

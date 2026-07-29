@@ -49,7 +49,10 @@ jobs:
         run: dotnet restore XLib.DockLayout.sln
 
       - name: Verify locked restore
-        run: dotnet restore XLib.DockLayout.sln --locked-mode
+        run: |
+          dotnet restore src/XLib.DockLayout/XLib.DockLayout.csproj --locked-mode
+          dotnet restore tests/XLib.DockLayout.Tests/XLib.DockLayout.Tests.csproj --locked-mode
+          dotnet restore tests/DockLayout.Playground.E2E/DockLayout.Playground.E2E.csproj --locked-mode
 
       - name: Verify formatting
         run: dotnet format XLib.DockLayout.sln --verify-no-changes --no-restore
