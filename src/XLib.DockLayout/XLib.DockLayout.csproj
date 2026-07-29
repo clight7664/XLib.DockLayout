@@ -32,7 +32,7 @@
   <ItemGroup>
     <None Include="../../README.NuGet.md" Pack="true" PackagePath="" Link="README.NuGet.md" />
     <None Include="../../LICENSE.txt" Pack="true" PackagePath="" Link="LICENSE.txt" />
-    <None Include="../../assets/branding/docklayout-icon-128.png" Pack="true" PackagePath="" Link="docklayout-icon.png" />
+    <None Include="../../assets/branding/docklayout-icon-128.png" Pack="true" PackagePath="docklayout-icon.png" />
     <Content Include="Serialization/layout-v1.xsd" Pack="true" PackagePath="contentFiles/any/any/Serialization" />
   </ItemGroup>
 </Project>
